@@ -1,6 +1,6 @@
 import { prisma } from '../../../lib/prisma';
-import { requireProjectAccess } from '../../../lib/apiGuard';
-import { getProjectState } from '../../../lib/platformStore';
+import { enforceRateLimit, requireProjectAccess } from '../../../lib/apiGuard';
+import { getProjectState, logActivity } from '../../../lib/platformStore';
 
 function parseStructured(content) {
   try {
@@ -30,28 +30,47 @@ async function callOpenAI(prompt) {
   return parseStructured(json.choices?.[0]?.message?.content || '');
 }
 
+function fallbackPayload(topScenario) {
+  if (!topScenario) {
+    return {
+      developerSummary: 'Create and score scenarios to unlock development strategy guidance.',
+      investorMemo: 'No scenario outputs are available yet. Generate scenarios to produce investor-grade guidance.',
+      boardSummary: 'Project has no scored scenarios yet; request a scenario generation run before investment approval.',
+      projectInsights: 'Boundary and feasibility context exist, but scenario comparison is still pending.'
+    };
+  }
+
+  return {
+    developerSummary: `Execute ${topScenario.name} with phased infra rollout and quarterly value-capture checks.`,
+    investorMemo: `Scenario ${topScenario.name} projects revenue ${topScenario.metrics.revenue} and margin ${topScenario.metrics.margin}; manage delivery risk at month ${topScenario.metrics.deliveryMonths}.`,
+    boardSummary: `Approve ${topScenario.name} and mandate monthly KPI review against margin and timeline thresholds.`,
+    projectInsights: `Top scoring scenario balances yield ${topScenario.metrics.yieldUnits}, road efficiency ${topScenario.layout.roadNetwork.efficiency}, and frontage ${topScenario.layout.frontageEfficiency}.`
+  };
+}
+
 export default async function handler(req, res) {
+  if (!enforceRateLimit(req, res, { prefix: 'ai-recommend', limit: 25, windowMs: 60_000 })) return;
   if (req.method !== 'POST') return res.status(405).end();
+
   req.query.projectId = req.body?.projectId;
   const access = await requireProjectAccess(req, res, req.body?.projectId);
   if (!access) return;
 
   const { projectId, audience = 'developer' } = req.body || {};
-  const state = await getProjectState(projectId);
-  const top = [...state.scenarios].sort((a, b) => b.optimizationScore - a.optimizationScore)[0];
+  if (!projectId || typeof projectId !== 'string') return res.status(400).json({ error: 'projectId required' });
 
-  const prompt = `You are LandOS Atlas strategy engine. Do NOT generate geometry. Use this data ${JSON.stringify({ project: state.project.name, audience, scenario: top })}. Return strict JSON with keys: developerSummary, investorMemo, boardSummary, projectInsights.`;
-  const aiObject = await callOpenAI(prompt);
-  const payload = aiObject || {
-    developerSummary: `Execute ${top.name} with phased infra rollout and quarterly value-capture checks.`,
-    investorMemo: `Scenario ${top.name} projects revenue ${top.metrics.revenue} and margin ${top.metrics.margin}; manage delivery risk at month ${top.metrics.deliveryMonths}.`,
-    boardSummary: `Approve ${top.name} and mandate monthly KPI review against margin and timeline thresholds.`,
-    projectInsights: `Top scoring scenario balances yield ${top.metrics.yieldUnits}, road efficiency ${top.layout.roadNetwork.efficiency}, and frontage ${top.layout.frontageEfficiency}.`
-  };
+  const state = await getProjectState(projectId);
+  if (!state) return res.status(404).json({ error: 'project not found' });
+  const top = [...(state.scenarios || [])].sort((a, b) => b.optimizationScore - a.optimizationScore)[0];
+
+  const prompt = `You are LandOS Atlas strategy engine. Do NOT generate geometry. Use this data ${JSON.stringify({ project: state.project.name, audience, scenario: top || null })}. Return strict JSON with keys: developerSummary, investorMemo, boardSummary, projectInsights.`;
+  const aiObject = top ? await callOpenAI(prompt) : null;
+  const payload = aiObject || fallbackPayload(top);
 
   const recommendation = await prisma.aIRecommendation.create({
     data: { projectId, audience, provider: aiObject ? 'openai' : 'fallback', payload, fallbackUsed: !aiObject }
   });
 
-  return res.status(200).json({ projectId, audience, recommendation, schemaVersion: '2.1.0' });
+  await logActivity(projectId, access.user.id, 'AI_RECOMMENDATION_GENERATED', { audience, provider: recommendation.provider, fallbackUsed: recommendation.fallbackUsed });
+  return res.status(200).json({ projectId, audience, recommendation, schemaVersion: '2.2.0' });
 }

@@ -271,6 +271,7 @@ export default function ProjectWorkspace({ projectId, section }) {
           <LandCommandMap
             className="h-[420px] w-full lg:h-[560px]"
             boundary={state?.boundary || []}
+            scenario={topScenario}
             onBoundaryChange={(next) => {
               setBoundaryInput(boundaryToInput(next));
               setState((current) => (current ? { ...current, boundary: next } : current));

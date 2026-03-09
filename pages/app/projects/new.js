@@ -64,7 +64,7 @@ export default function NewProject() {
 
         <input className="glass-panel mt-4 w-full px-3 py-2" value={name} onChange={(e) => setName(e.target.value)} placeholder="Project name" />
         <div className="mt-3 grid gap-3 md:grid-cols-2">
-          <select className="glass-panel px-3 py-2" value={objective} onChange={(e) => setObjective(e.target.value)}><option>BALANCED</option><option>MAX_YIELD</option><option>PREMIUM</option><option>MAX_SIMPLICITY</option></select>
+          <select className="glass-panel px-3 py-2" value={objective} onChange={(e) => setObjective(e.target.value)}><option>BALANCED</option><option>MAX_YIELD</option><option>PREMIUM</option><option>FAST_DELIVERY</option></select>
           <input className="glass-panel px-3 py-2" value={goal} onChange={(e) => setGoal(e.target.value)} placeholder="Project goal" />
         </div>
         <div className="mt-3 flex gap-2">
