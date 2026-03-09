@@ -17,8 +17,8 @@ app.post('/api/contact', (req, res) => {
   res.status(200).json({ success: true });
 });
 
-// Fallback: serve index.html for any unmatched routes
-app.get('*', (req, res) => {
+// Fallback: serve index.html for any unmatched GET routes
+app.get(/.*/, (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
