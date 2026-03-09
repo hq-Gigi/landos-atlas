@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Additional global styling for LandOS Atlas */
+html, body {
+  scroll-behavior: smooth;
+}
