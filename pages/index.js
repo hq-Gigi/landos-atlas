@@ -1,32 +1,29 @@
 import Head from 'next/head';
 import Link from 'next/link';
+import NavBar from '../components/NavBar';
+import Hero from '../components/Hero';
+import { audiences, productName, tagline } from '../lib/brand';
 
 export default function Home() {
   return (
     <>
       <Head>
-        <title>LandOS Atlas</title>
-        <meta name="description" content="Planetary operating system for land intelligence" />
+        <title>{productName}</title>
+        <meta name="description" content={tagline} />
       </Head>
-      <main className="min-h-screen bg-[#05070B] text-white">
-        <nav className="p-6 flex justify-between items-center border-b border-gray-700">
-          <h1 className="text-xl font-bold">LandOS Atlas</h1>
-          <div className="space-x-4">
-            <Link href="/experience">Experience</Link>
-            <Link href="/platform">Platform</Link>
-            <Link href="/for-developers">Developers</Link>
-            <Link href="/for-investors">Investors</Link>
-            <Link href="/for-governments">Governments</Link>
-            <Link href="/for-enterprises">Enterprises</Link>
+      <main className="min-h-screen bg-slate-950 text-white">
+        <NavBar />
+        <Hero />
+        <section className="mx-auto max-w-7xl px-6 pb-20">
+          <h2 className="text-2xl font-semibold">Built for every land intelligence stakeholder</h2>
+          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {audiences.map((a) => (
+              <Link key={a.href} href={a.href} className="rounded-2xl border border-white/10 bg-white/5 p-5 transition hover:border-cyan-300/60">
+                <h3 className="font-semibold">{a.title}</h3>
+                <p className="mt-3 text-sm text-slate-300">{a.copy}</p>
+              </Link>
+            ))}
           </div>
-        </nav>
-        <section className="p-12 text-center">
-          <h2 className="text-4xl font-bold mb-4">Welcome to LandOS Atlas</h2>
-          <p className="max-w-2xl mx-auto text-lg text-gray-300">
-            LandOS Atlas is a planetary intelligence and execution operating system that turns land anywhere on
-            Earth into structured data, optimized planning scenarios, financial intelligence and collaborative
-            workflows.
-          </p>
         </section>
       </main>
     </>

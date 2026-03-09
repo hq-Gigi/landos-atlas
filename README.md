@@ -1,63 +1,78 @@
-# landos-atlas
-Planetary operating system for land, development, infrastructure, investment and governance by Gigi Labs.
+# LandOS Atlas by GIGI LABS
 
-## Overview
+**Tagline:** The Planetary Operating System for Land Development Intelligence
 
-LandOS Atlas is a planetary intelligence and execution operating system that turns land anywhere on Earth into structured data, optimized planning scenarios, financial intelligence and collaborative workflows. Investors, planners, builders, and institutions can analyze, simulate scenarios, finance and execute projects, manage the full lifecycle of land‑based development at global scale.
+This repository now ships a real multi-surface platform foundation with:
 
-## Documentation
+- Premium public marketing and storytelling routes
+- Cinematic experience route scaffold with 8 narrative sections
+- Functional app workspace route tree (`/app/*`)
+- Backend API modules for auth, orgs, projects, scenarios, feasibility, AI summaries, billing, exports, collaboration, and marketplace
+- Deterministic scenario engine (non-AI geometry/scoring)
+- Prisma PostgreSQL data model covering platform entities
+- Docs/resources route that preserves original blueprint PDFs
 
-The following PDF documents in this repository provide the complete blueprint for LandOS Atlas:
+## Key Routes
 
-- **Land Os Gigi Labs Master Blueprint (2).pdf** – Final world‑system blueprint.
-- **Land Os Atlas Cinematic Experience System.pdf** – Cinematic experience system details.
-- **Land Os Atlas Cinematic Implementation Pack.pdf** – Implementation pack for cinematic assets.
-- **Land Os Atlas Operational Build Pack.pdf** – Operational build guidelines.
-- **Land Os Atlas Continuation From 28 (1).pdf** – Continuation materials.
+### Public
+- `/`
+- `/experience`
+- `/platform`
+- `/for-developers`
+- `/for-investors`
+- `/for-governments`
+- `/for-enterprises`
+- `/docs/resources`
 
-## Build and Runtime
+### App
+- `/app`
+- `/app/portfolio`
+- `/app/projects/new`
+- `/app/projects/:projectId`
+- `/app/projects/:projectId/scenarios`
+- `/app/projects/:projectId/feasibility`
+- `/app/projects/:projectId/reports`
+- `/app/projects/:projectId/collaboration`
+- `/app/marketplace`
+- `/app/billing`
+- `/app/team`
+- `/app/settings`
+
+## API Foundations
+- Auth: `/api/auth/signup`, `/api/auth/login`, `/api/auth/logout`
+- Organizations: `/api/orgs`
+- Projects: `/api/projects`, `/api/projects/:projectId`
+- Scenarios: `/api/projects/:projectId/scenarios`
+- Feasibility: `/api/projects/:projectId/feasibility`
+- Collaboration: `/api/projects/:projectId/collaboration`
+- AI recommendations: `/api/ai/recommend`
+- Billing (Paystack flow foundation): `/api/billing/initialize`, `/api/billing/webhook`, `/api/billing/verify`
+- Exports: `/api/exports/generate`
+- Marketplace: `/api/marketplace`
+
+## Local Run
 
 ```bash
 npm install
+npm run dev
+```
+
+Build check:
+
+```bash
 npm run build
-npm run start
 ```
 
-Default runtime port is `3000`.
+## Environment
+Copy `.env.example` and provide real service keys:
 
-## Health Endpoint
+- `DATABASE_URL`
+- `OPENAI_API_KEY`
+- `PAYSTACK_SECRET_KEY`
+- `PAYSTACK_PUBLIC_KEY`
+- `NEXT_PUBLIC_APP_URL`
 
-A production health endpoint is exposed at:
-
-- `GET /api/health`
-
-Example response:
-
-```json
-{
-  "status": "ok",
-  "service": "landos-atlas",
-  "timestamp": "2026-03-09T03:54:52.695Z"
-}
-```
-
-## Render Deployment
-
-A Render Blueprint config is included in `render.yaml`.
-
-### One-time setup
-
-1. Push this repo to GitHub.
-2. In Render, create a **Blueprint** service from this repository.
-3. Confirm Render reads `render.yaml` and provisions the `landos-atlas` web service.
-
-### Ongoing deploys
-
-- Every push to the tracked branch will trigger an auto-deploy (`autoDeploy: true`).
-- Health checks use `/api/health`.
-
-## Audit Notes
-
-- Added `.gitignore` to prevent committing `node_modules` and build artifacts.
-- Standardized project to JavaScript files only (removed TypeScript-only scaffolding that blocked CI builds in this environment).
-- Added a health endpoint and Render blueprint so production deployments have a deterministic health check and startup contract.
+## Notes
+- In-memory API storage is included for local demo UX.
+- Prisma schema provides production-ready PostgreSQL model mapping.
+- Replace mock Paystack authorization URL and AI stub responses with provider SDK/service integrations for production.
