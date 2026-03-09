@@ -14,6 +14,13 @@ const layerGroups = {
   utilities: ['power', 'pipeline', 'utility']
 };
 
+
+
+function scenarioPalette(scenarioName = '') {
+  if (scenarioName === 'MAX_YIELD') return { road: '#f59e0b', plotLine: '#60a5fa', plotFill: '#2563eb' };
+  if (scenarioName === 'PREMIUM_LAYOUT') return { road: '#fde047', plotLine: '#34d399', plotFill: '#059669' };
+  return { road: '#f8d26a', plotLine: '#94b8ff', plotFill: '#4f46e5' };
+}
 function ensureMapboxAssets() {
   if (typeof window === 'undefined') return Promise.resolve(null);
   if (window.mapboxgl) return Promise.resolve(window.mapboxgl);
@@ -235,7 +242,8 @@ export default function LandCommandMap({ className = '', boundary = [], scenario
         map.addLayer({ id: 'scenario-roads', type: 'line', source: 'scenario-roads', paint: { 'line-color': '#f8d26a', 'line-width': 2.4, 'line-opacity': 0.9 } });
 
         map.addSource('scenario-plots', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-        map.addLayer({ id: 'scenario-plots', type: 'line', source: 'scenario-plots', paint: { 'line-color': '#94b8ff', 'line-width': 1.1, 'line-opacity': 0.75 } });
+        map.addLayer({ id: 'scenario-plots-fill', type: 'fill', source: 'scenario-plots', paint: { 'fill-color': '#4f46e5', 'fill-opacity': 0.2 } });
+        map.addLayer({ id: 'scenario-plots', type: 'line', source: 'scenario-plots', paint: { 'line-color': '#94b8ff', 'line-width': 1.1, 'line-opacity': 0.9 } });
 
         if (mapboxToken) {
           map.addSource('mapbox-dem', { type: 'raster-dem', url: 'mapbox://mapbox.mapbox-terrain-dem-v1', tileSize: 512, maxzoom: 14 });
@@ -305,9 +313,19 @@ export default function LandCommandMap({ className = '', boundary = [], scenario
     if (mapboxToken && map.getTerrain()) map.setTerrain({ source: 'mapbox-dem', exaggeration: layersEnabled.terrain ? 1.2 : 1.0 });
     ['parcel-fill', 'parcel-outline'].forEach((id) => map.getLayer(id) && map.setLayoutProperty(id, 'visibility', layersEnabled.parcels ? 'visible' : 'none'));
     ['candidate-fill', 'candidate-outline'].forEach((id) => map.getLayer(id) && map.setLayoutProperty(id, 'visibility', layersEnabled.candidates ? 'visible' : 'none'));
-    ['scenario-roads', 'scenario-plots'].forEach((id) => map.getLayer(id) && map.setLayoutProperty(id, 'visibility', layersEnabled.scenarios ? 'visible' : 'none'));
+    ['scenario-roads', 'scenario-plots-fill', 'scenario-plots'].forEach((id) => map.getLayer(id) && map.setLayoutProperty(id, 'visibility', layersEnabled.scenarios ? 'visible' : 'none'));
   }, [layersEnabled, mapboxToken]);
 
+
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map?.isStyleLoaded()) return;
+    const palette = scenarioPalette(scenario?.name);
+    if (map.getLayer('scenario-roads')) map.setPaintProperty('scenario-roads', 'line-color', palette.road);
+    if (map.getLayer('scenario-plots')) map.setPaintProperty('scenario-plots', 'line-color', palette.plotLine);
+    if (map.getLayer('scenario-plots-fill')) map.setPaintProperty('scenario-plots-fill', 'fill-color', palette.plotFill);
+  }, [scenario]);
   const runSearch = async (event) => {
     event.preventDefault();
     if (!searchValue.trim() || !mapRef.current) return;
