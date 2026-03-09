@@ -55,6 +55,7 @@ model Organization {
   projects     Project[]
   subscription Subscription?
   listings     Listing[]
+  opportunities Opportunity[]
   createdAt    DateTime             @default(now())
 }
 
@@ -88,6 +89,8 @@ model Project {
   exports            Export[]
   payments           Payment[]
   tasks              Task[]
+  listings           Listing[]
+  opportunities      Opportunity[]
   createdAt          DateTime            @default(now())
 }
 
@@ -119,6 +122,7 @@ model LayoutOption {
   fingerprint  String
   payload      Json
   project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  opportunities Opportunity[]
   createdAt    DateTime @default(now())
 }
 
@@ -224,19 +228,46 @@ model Subscription {
 model Listing {
   id             String       @id @default(cuid())
   organizationId String
+  projectId      String?
   title          String
-  payload        Json
-  status         String
+  summary        String
+  location       String?
+  geometry       Json?
+  askPrice       Float?
+  listingType    String
+  status         String       @default("OPEN")
+  areaSqm        Float?
+  frontageM      Float?
+  payload        Json         @default("{}")
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project        Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId, status])
+  @@index([projectId])
 }
 
 model Opportunity {
-  id        String   @id @default(cuid())
-  title     String
-  type      String
-  payload   Json
-  status    String
-  createdAt DateTime @default(now())
+  id                   String       @id @default(cuid())
+  organizationId       String
+  projectId            String?
+  scenarioId           String?
+  title                String
+  summary              String
+  type                 String
+  status               String       @default("OPEN")
+  feasibilityHighlight String?
+  investmentSignals    Json?
+  payload              Json         @default("{}")
+  organization         Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project              Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  scenario             LayoutOption? @relation(fields: [scenarioId], references: [id], onDelete: SetNull)
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+
+  @@index([organizationId, status])
+  @@index([projectId])
 }
 
 model Task {
