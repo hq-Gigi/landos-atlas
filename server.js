@@ -3,10 +3,12 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(express.static(path.join(__dirname, 'public')));
+// Serve static files from the current directory
+app.use(express.static(__dirname));
 
+// Fallback: serve index.html for any unmatched routes
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/index.html'));
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.listen(PORT, () => {
