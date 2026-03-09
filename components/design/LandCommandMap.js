@@ -36,6 +36,19 @@ function ensureMapboxAssets() {
   });
 }
 
+
+function normalizePoint(point) {
+  if (Array.isArray(point)) return { lng: Number(point[0]), lat: Number(point[1]) };
+  return { lng: Number(point?.lng), lat: Number(point?.lat) };
+}
+
+function normalizeBoundary(boundary = []) {
+  if (!Array.isArray(boundary)) return [];
+  return boundary
+    .map(normalizePoint)
+    .filter((point) => Number.isFinite(point.lng) && Number.isFinite(point.lat));
+}
+
 const SATELLITE_STYLE = {
   version: 8,
   sources: {
@@ -50,8 +63,9 @@ const SATELLITE_STYLE = {
 };
 
 function toGeoJson(boundary) {
-  if (!Array.isArray(boundary) || boundary.length < 3) return null;
-  const closed = [...boundary, boundary[0]];
+  const normalized = normalizeBoundary(boundary);
+  if (normalized.length < 3) return null;
+  const closed = [...normalized, normalized[0]].map((point) => [point.lng, point.lat]);
   return {
     type: 'FeatureCollection',
     features: [{
@@ -66,9 +80,10 @@ function toGeoJson(boundary) {
 }
 
 function getBBox(boundary) {
-  if (!Array.isArray(boundary) || boundary.length < 3) return null;
-  const lngs = boundary.map((p) => p[0]);
-  const lats = boundary.map((p) => p[1]);
+  const normalized = normalizeBoundary(boundary);
+  if (normalized.length < 3) return null;
+  const lngs = normalized.map((p) => p.lng);
+  const lats = normalized.map((p) => p.lat);
   return [Math.min(...lngs), Math.min(...lats), Math.max(...lngs), Math.max(...lats)];
 }
 
@@ -126,16 +141,16 @@ export default function LandCommandMap({ className = '', boundary = [], onBounda
   const markersRef = useRef([]);
   const drawModeRef = useRef(false);
   const mapboxRef = useRef(null);
-  const boundaryRef = useRef(boundary || []);
+  const boundaryRef = useRef(normalizeBoundary(boundary));
   const [searchValue, setSearchValue] = useState('Lagos, Nigeria');
   const [drawMode, setDrawMode] = useState(false);
-  const [localBoundary, setLocalBoundary] = useState(boundary || []);
+  const [localBoundary, setLocalBoundary] = useState(normalizeBoundary(boundary));
   const [mapboxLoadError, setMapboxLoadError] = useState('');
 
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
   useEffect(() => {
-    const next = Array.isArray(boundary) ? boundary : [];
+    const next = normalizeBoundary(boundary);
     setLocalBoundary(next);
     boundaryRef.current = next;
   }, [boundary]);
@@ -181,7 +196,7 @@ export default function LandCommandMap({ className = '', boundary = [], onBounda
 
       map.on('click', (event) => {
         if (!drawModeRef.current) return;
-        const nextBoundary = [...(boundaryRef.current || []), [event.lngLat.lng, event.lngLat.lat]];
+        const nextBoundary = [...(boundaryRef.current || []), { lng: event.lngLat.lng, lat: event.lngLat.lat }];
         setLocalBoundary(nextBoundary);
         onBoundaryChange?.(nextBoundary);
         boundaryRef.current = nextBoundary;
@@ -212,13 +227,13 @@ export default function LandCommandMap({ className = '', boundary = [], onBounda
 
     localBoundary.forEach((point, index) => {
       const marker = new mapboxRef.current.Marker({ color: '#34e7ff', draggable: true })
-        .setLngLat(point)
+        .setLngLat([point.lng, point.lat])
         .addTo(map);
 
       marker.on('dragend', () => {
         const lngLat = marker.getLngLat();
         const next = [...localBoundary];
-        next[index] = [lngLat.lng, lngLat.lat];
+        next[index] = { lng: lngLat.lng, lat: lngLat.lat };
         setLocalBoundary(next);
         onBoundaryChange?.(next);
       });

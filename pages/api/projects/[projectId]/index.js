@@ -1,5 +1,5 @@
 import { requireProjectAccess } from '../../../../lib/apiGuard';
-import { getProjectState, saveLandProfile, updateBoundary } from '../../../../lib/platformStore';
+import { getProjectState, saveLandProfile, saveProjectStrategy, updateBoundary } from '../../../../lib/platformStore';
 import { normalizeAssumptions, validatePolygon } from '../../../../lib/validation';
 
 export default async function handler(req, res) {
@@ -17,10 +17,18 @@ export default async function handler(req, res) {
       if (!validatePolygon(req.body.boundary)) return res.status(400).json({ error: 'invalid boundary polygon' });
       await updateBoundary(projectId, req.body.boundary);
     }
+    if (req.body?.strategy) {
+      await saveProjectStrategy(projectId, req.body.strategy);
+    }
     if (req.body?.landProfile) {
+      const assumptions = normalizeAssumptions(req.body.landProfile.assumptions || {});
       await saveLandProfile(projectId, {
         ...req.body.landProfile,
-        assumptions: normalizeAssumptions(req.body.landProfile.assumptions || {})
+        assumptions: {
+          ...assumptions,
+          objective: req.body.landProfile.assumptions?.objective || req.body.strategy?.objective || 'BALANCED',
+          goal: req.body.landProfile.assumptions?.goal || req.body.strategy?.goal || 'BALANCED'
+        }
       });
     }
     const state = await getProjectState(projectId);
