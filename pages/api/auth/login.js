@@ -1,13 +1,17 @@
-import { platformStore } from '../../../lib/platformStore';
+import { createSession, setSessionCookie } from '../../../lib/auth';
+import { loginUser } from '../../../lib/platformStore';
+import { validateAuthPayload } from '../../../lib/validation';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
   const { email, password } = req.body || {};
-  if (!email || !password) return res.status(400).json({ error: 'email and password required' });
+  const error = validateAuthPayload({ email, password });
+  if (error) return res.status(400).json({ error });
 
-  const user = await platformStore.loginUser({ email, password });
+  const user = await loginUser({ email, password });
   if (!user) return res.status(401).json({ error: 'invalid credentials' });
 
-  const token = platformStore.createSession(user.id);
+  const token = await createSession(user.id);
+  setSessionCookie(res, token);
   return res.status(200).json({ token, user });
 }

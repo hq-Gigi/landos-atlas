@@ -7,34 +7,64 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum MemberRole {
+  OWNER
+  ADMIN
+  ANALYST
+  VIEWER
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+enum ExportStatus {
+  LOCKED
+  READY
+  FAILED
+}
+
 model User {
-  id                 String               @id @default(cuid())
-  email              String               @unique
-  passwordHash       String
-  name               String
+  id                  String               @id @default(cuid())
+  email               String               @unique
+  passwordHash        String
+  name                String
+  sessions            Session[]
   organizationMembers OrganizationMember[]
-  comments           Comment[]
-  activityLogs       ActivityLog[]
-  tasks              Task[]
-  createdAt          DateTime             @default(now())
+  comments            Comment[]
+  activityLogs        ActivityLog[]
+  tasks               Task[]
+  createdAt           DateTime             @default(now())
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 }
 
 model Organization {
-  id          String               @id @default(cuid())
-  name        String
-  members     OrganizationMember[]
-  projects    Project[]
+  id           String               @id @default(cuid())
+  name         String
+  members      OrganizationMember[]
+  projects     Project[]
   subscription Subscription?
-  createdAt   DateTime             @default(now())
+  listings     Listing[]
+  createdAt    DateTime             @default(now())
 }
 
 model OrganizationMember {
   id             String       @id @default(cuid())
   organizationId String
   userId         String
-  role           String
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  user           User         @relation(fields: [userId], references: [id])
+  role           MemberRole
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([organizationId, userId])
 }
@@ -45,7 +75,7 @@ model Project {
   name               String
   objective          String
   goal               String
-  organization       Organization        @relation(fields: [organizationId], references: [id])
+  organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   boundaries         ProjectBoundary[]
   landProfile        LandProfile?
   layoutOptions      LayoutOption[]
@@ -60,17 +90,155 @@ model Project {
   createdAt          DateTime            @default(now())
 }
 
-model ProjectBoundary { id String @id @default(cuid()) projectId String geometry Json project Project @relation(fields:[projectId], references:[id]) }
-model LandProfile { id String @id @default(cuid()) projectId String @unique zoning String? constraints Json? project Project @relation(fields:[projectId], references:[id]) }
-model LayoutOption { id String @id @default(cuid()) projectId String scenarioType String payload Json project Project @relation(fields:[projectId], references:[id]) }
-model OptimizationScore { id String @id @default(cuid()) projectId String layoutOptionId String score Float breakdown Json project Project @relation(fields:[projectId], references:[id]) }
-model FeasibilityReport { id String @id @default(cuid()) projectId String summary String payload Json project Project @relation(fields:[projectId], references:[id]) }
-model AIRecommendation { id String @id @default(cuid()) projectId String audience String payload Json project Project @relation(fields:[projectId], references:[id]) }
-model Comment { id String @id @default(cuid()) projectId String userId String body String scenarioId String? project Project @relation(fields:[projectId], references:[id]) user User @relation(fields:[userId], references:[id]) createdAt DateTime @default(now()) }
-model ActivityLog { id String @id @default(cuid()) projectId String userId String action String payload Json? project Project @relation(fields:[projectId], references:[id]) user User @relation(fields:[userId], references:[id]) createdAt DateTime @default(now()) }
-model Export { id String @id @default(cuid()) projectId String type String isUnlocked Boolean @default(false) url String? metadata Json? project Project @relation(fields:[projectId], references:[id]) createdAt DateTime @default(now()) }
-model Payment { id String @id @default(cuid()) projectId String reference String @unique provider String status String amount Int metadata Json? project Project @relation(fields:[projectId], references:[id]) createdAt DateTime @default(now()) }
-model Subscription { id String @id @default(cuid()) organizationId String @unique plan String status String renewalDate DateTime organization Organization @relation(fields:[organizationId], references:[id]) }
-model Listing { id String @id @default(cuid()) organizationId String title String payload Json status String }
-model Opportunity { id String @id @default(cuid()) title String type String payload Json status String }
-model Task { id String @id @default(cuid()) projectId String userId String title String status String dueDate DateTime? project Project @relation(fields:[projectId], references:[id]) user User @relation(fields:[userId], references:[id]) }
+model ProjectBoundary {
+  id        String   @id @default(cuid())
+  projectId String
+  geometry  Json
+  area      Float
+  perimeter Float
+  frontage  Float
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model LandProfile {
+  id          String   @id @default(cuid())
+  projectId   String   @unique
+  zoning      String?
+  constraints Json?
+  assumptions Json?
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  updatedAt   DateTime @updatedAt
+}
+
+model LayoutOption {
+  id           String   @id @default(cuid())
+  projectId    String
+  scenarioType String
+  fingerprint  String
+  payload      Json
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+}
+
+model OptimizationScore {
+  id             String  @id @default(cuid())
+  projectId      String
+  layoutOptionId String
+  score          Float
+  breakdown      Json
+  project        Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model FeasibilityReport {
+  id             String  @id @default(cuid())
+  projectId      String
+  layoutOptionId String
+  summary        String
+  payload        Json
+  project        Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model AIRecommendation {
+  id           String   @id @default(cuid())
+  projectId    String
+  audience     String
+  provider     String
+  payload      Json
+  fallbackUsed Boolean  @default(false)
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+}
+
+model Comment {
+  id         String   @id @default(cuid())
+  projectId  String
+  userId     String
+  body       String
+  scenarioId String?
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  projectId String
+  userId    String
+  action    String
+  payload   Json?
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model Export {
+  id        String       @id @default(cuid())
+  projectId String
+  type      String
+  status    ExportStatus @default(LOCKED)
+  url       String?
+  metadata  Json?
+  project   Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt DateTime     @default(now())
+}
+
+model Payment {
+  id        String        @id @default(cuid())
+  projectId String
+  reference String        @unique
+  provider  String
+  status    PaymentStatus
+  amount    Int
+  metadata  Json?
+  project   Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt DateTime      @default(now())
+}
+
+model Subscription {
+  id             String       @id @default(cuid())
+  organizationId String       @unique
+  plan           String
+  status         String
+  renewalDate    DateTime
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model Listing {
+  id             String       @id @default(cuid())
+  organizationId String
+  title          String
+  payload        Json
+  status         String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model Opportunity {
+  id        String   @id @default(cuid())
+  title     String
+  type      String
+  payload   Json
+  status    String
+  createdAt DateTime @default(now())
+}
+
+model Task {
+  id        String    @id @default(cuid())
+  projectId String
+  userId    String
+  title     String
+  status    String
+  dueDate   DateTime?
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model LandAnalyticsSnapshot {
+  id                 String   @id @default(cuid())
+  totalProjects      Int
+  avgBoundaryArea    Float
+  avgScenarioScore   Float
+  totalOrganizations Int
+  totalListings      Int
+  generatedAt        DateTime @default(now())
+}

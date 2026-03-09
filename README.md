@@ -1,78 +1,51 @@
 # LandOS Atlas by GIGI LABS
 
-**Tagline:** The Planetary Operating System for Land Development Intelligence
+**The Planetary Operating System for Land Development Intelligence.**
 
-This repository now ships a real multi-surface platform foundation with:
+## Platform surfaces
+- **Public cinematic/product surface**: `/`, `/experience`, `/platform`, `/for-*`, `/docs/resources`
+- **Application workspace**: `/app`, `/app/portfolio`, `/app/projects/new`, `/app/projects/[projectId]/*`
 
-- Premium public marketing and storytelling routes
-- Cinematic experience route scaffold with 8 narrative sections
-- Functional app workspace route tree (`/app/*`)
-- Backend API modules for auth, orgs, projects, scenarios, feasibility, AI summaries, billing, exports, collaboration, and marketplace
-- Deterministic scenario engine (non-AI geometry/scoring)
-- Prisma PostgreSQL data model covering platform entities
-- Docs/resources route that preserves original blueprint PDFs
+## Repository structure
+- `pages/api/*` – authenticated API routes for auth, orgs, projects, scenarios, feasibility, AI, billing, exports, marketplace, geo search
+- `pages/app/*` – authenticated application workspace pages
+- `pages/*` – public product pages and cinematic experience
+- `lib/*` – service layer (auth, guards, store, scenario engine, Prisma client, validation)
+- `prisma/*` – schema + migration SQL
+- `scripts/seed.js` – demo org/user/project seed
 
-## Key Routes
+## Database-backed systems
+- Auth + sessions
+- Organizations + membership
+- Projects + boundaries + land profile
+- Deterministic scenarios + optimization scores + feasibility reports
+- AI recommendations
+- Collaboration comments/tasks/activity
+- Billing payments + unlock-gated exports
+- Marketplace listings + opportunities
 
-### Public
-- `/`
-- `/experience`
-- `/platform`
-- `/for-developers`
-- `/for-investors`
-- `/for-governments`
-- `/for-enterprises`
-- `/docs/resources`
-
-### App
-- `/app`
-- `/app/portfolio`
-- `/app/projects/new`
-- `/app/projects/:projectId`
-- `/app/projects/:projectId/scenarios`
-- `/app/projects/:projectId/feasibility`
-- `/app/projects/:projectId/reports`
-- `/app/projects/:projectId/collaboration`
-- `/app/marketplace`
-- `/app/billing`
-- `/app/team`
-- `/app/settings`
-
-## API Foundations
-- Auth: `/api/auth/signup`, `/api/auth/login`, `/api/auth/logout`
-- Organizations: `/api/orgs`
-- Projects: `/api/projects`, `/api/projects/:projectId`
-- Scenarios: `/api/projects/:projectId/scenarios`
-- Feasibility: `/api/projects/:projectId/feasibility`
-- Collaboration: `/api/projects/:projectId/collaboration`
-- AI recommendations: `/api/ai/recommend`
-- Billing (Paystack flow foundation): `/api/billing/initialize`, `/api/billing/webhook`, `/api/billing/verify`
-- Exports: `/api/exports/generate`
-- Marketplace: `/api/marketplace`
-
-## Local Run
+## Required environment
+Copy `.env.example` to `.env`:
 
 ```bash
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/landos_atlas"
+OPENAI_API_KEY=""
+OPENAI_MODEL="gpt-4o-mini"
+PAYSTACK_SECRET_KEY=""
+```
+
+## Local run
+```bash
 npm install
+npx prisma generate
+npx prisma db push
+node scripts/seed.js
 npm run dev
 ```
 
-Build check:
-
-```bash
-npm run build
-```
-
-## Environment
-Copy `.env.example` and provide real service keys:
-
-- `DATABASE_URL`
-- `OPENAI_API_KEY`
-- `PAYSTACK_SECRET_KEY`
-- `PAYSTACK_PUBLIC_KEY`
-- `NEXT_PUBLIC_APP_URL`
-
-## Notes
-- API routes now prefer Prisma/PostgreSQL persistence whenever `DATABASE_URL` is configured, with in-memory fallback for local demos.
-- Auth now stores password hashes and uses session tokens for login/logout APIs.
-- Paystack and AI endpoints still include fallback behavior and require production provider wiring for live deployments.
+## Production/deployment notes
+- Set `DATABASE_URL` to managed Postgres and run Prisma migrations in CI/CD.
+- Configure `OPENAI_API_KEY` for structured recommendation generation.
+- Configure `PAYSTACK_SECRET_KEY` and route webhook to `/api/billing/webhook`.
+- Serve `public/exports` via app/CDN storage strategy.
+- Run `npm run build` in deployment pipeline.

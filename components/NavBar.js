@@ -8,6 +8,9 @@ const links = [
   ['Governments', '/for-governments'],
   ['Enterprises', '/for-enterprises'],
   ['App', '/app'],
+  ['Pricing', '/pricing'],
+  ['Security', '/security'],
+  ['Contact', '/contact'],
   ['Docs', '/docs/resources']
 ];
 
