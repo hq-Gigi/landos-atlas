@@ -10,8 +10,13 @@ const stats = [
 
 export default function Hero() {
   return (
-    <section className="relative overflow-hidden px-4 pb-16 pt-16 sm:px-6 sm:pb-20 sm:pt-24">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,#1397FF40,transparent_30%),radial-gradient(circle_at_80%_20%,#4FD1FF30,transparent_30%),radial-gradient(circle_at_50%_80%,#F4C54222,transparent_40%)]" />
+    <section className="hero-stage relative overflow-hidden px-4 pb-16 pt-16 sm:px-6 sm:pb-20 sm:pt-24">
+      <div className="hero-noise" />
+      <div className="hero-orbit hero-orbit-a" />
+      <div className="hero-orbit hero-orbit-b" />
+      <div className="hero-beam hero-beam-a" />
+      <div className="hero-beam hero-beam-b" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,#1397FF55,transparent_30%),radial-gradient(circle_at_80%_20%,#4FD1FF45,transparent_30%),radial-gradient(circle_at_50%_80%,#F4C54230,transparent_40%)]" />
       <div className="relative mx-auto grid max-w-7xl gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:gap-10">
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.85 }}>
           <p className="eyebrow">GIGI LABS FLAGSHIP</p>
@@ -23,10 +28,15 @@ export default function Hero() {
           </div>
           <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {stats.map(([value, label]) => (
-              <div key={value} className="glass-panel p-4 sm:p-5">
+              <motion.div
+                key={value}
+                className="glass-panel p-4 sm:p-5"
+                whileHover={{ y: -4, scale: 1.02 }}
+                transition={{ type: 'spring', stiffness: 180, damping: 16 }}
+              >
                 <p className="text-2xl font-semibold text-cyan-200">{value}</p>
                 <p className="mt-1 text-xs uppercase tracking-wide text-[#93b6d7]">{label}</p>
-              </div>
+              </motion.div>
             ))}
           </div>
         </motion.div>
@@ -36,10 +46,15 @@ export default function Hero() {
             ['Financial feasibility core', 'Instantly projects capex, revenue curves, margin, and timeline risk vectors.'],
             ['Stakeholder graph command layer', 'Coordinates planners, investors, and regulators with shared project context.']
           ].map(([title, copy]) => (
-            <div key={title} className="glass-panel glow-border p-5 sm:p-6">
+            <motion.div
+              key={title}
+              className="glass-panel glow-border p-5 sm:p-6"
+              whileHover={{ y: -8, rotateX: 2, rotateY: -2 }}
+              transition={{ type: 'spring', stiffness: 140, damping: 18 }}
+            >
               <h3 className="font-semibold">{title}</h3>
               <p className="mt-2 text-sm text-[#b5cde6]">{copy}</p>
-            </div>
+            </motion.div>
           ))}
         </motion.div>
       </div>

@@ -1,11 +1,12 @@
 import { motion } from 'framer-motion';
 
 export const fadeUp = {
-  hidden: { opacity: 0, y: 28 },
+  hidden: { opacity: 0, y: 32, scale: 0.97 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.75, ease: [0.22, 1, 0.36, 1] }
+    scale: 1,
+    transition: { duration: 0.82, ease: [0.22, 1, 0.36, 1] }
   }
 };
 
@@ -13,8 +14,8 @@ export const staggerParent = {
   hidden: {},
   visible: {
     transition: {
-      staggerChildren: 0.12,
-      delayChildren: 0.1
+      staggerChildren: 0.15,
+      delayChildren: 0.18
     }
   }
 };
@@ -52,8 +53,8 @@ export function MotionCard({ children, className = '' }) {
   return (
     <motion.div
       variants={fadeUp}
-      whileHover={{ y: -7, scale: 1.01 }}
-      transition={{ type: 'spring', stiffness: 180, damping: 20 }}
+      whileHover={{ y: -12, scale: 1.018, rotateX: 2, rotateY: -1 }}
+      transition={{ type: 'spring', stiffness: 170, damping: 16 }}
       className={`glass-panel ${className}`}
     >
       {children}
