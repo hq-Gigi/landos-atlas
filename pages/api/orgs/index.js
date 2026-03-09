@@ -1,12 +1,15 @@
-import { db } from '../../../lib/db';
+import { platformStore } from '../../../lib/platformStore';
 
-export default function handler(req, res) {
-  if (req.method === 'GET') return res.status(200).json(db.organizations);
+export default async function handler(req, res) {
+  if (req.method === 'GET') {
+    const orgs = await platformStore.listOrganizations();
+    return res.status(200).json(orgs);
+  }
+
   if (req.method === 'POST') {
-    const id = `org${db.organizations.length + 1}`;
-    const org = { id, name: req.body?.name || `Organization ${id}`, createdAt: new Date().toISOString() };
-    db.organizations.push(org);
+    const org = await platformStore.createOrganization(req.body?.name || 'New Organization');
     return res.status(201).json(org);
   }
+
   return res.status(405).end();
 }

@@ -73,6 +73,6 @@ Copy `.env.example` and provide real service keys:
 - `NEXT_PUBLIC_APP_URL`
 
 ## Notes
-- In-memory API storage is included for local demo UX.
-- Prisma schema provides production-ready PostgreSQL model mapping.
-- Replace mock Paystack authorization URL and AI stub responses with provider SDK/service integrations for production.
+- API routes now prefer Prisma/PostgreSQL persistence whenever `DATABASE_URL` is configured, with in-memory fallback for local demos.
+- Auth now stores password hashes and uses session tokens for login/logout APIs.
+- Paystack and AI endpoints still include fallback behavior and require production provider wiring for live deployments.
