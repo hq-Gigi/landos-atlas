@@ -10,15 +10,30 @@ html, body {
 * { box-sizing: border-box; }
 
 .atlas-bg {
-  background: linear-gradient(180deg, #05070b 0%, #0a0f17 42%, #0e1c2f 100%);
+  background: radial-gradient(circle at 50% -20%, rgba(42, 123, 255, 0.18), transparent 42%),
+    linear-gradient(180deg, #04060b 0%, #090f17 38%, #0b1c30 100%);
+}
+
+.scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(255,255,255,0.02) 1px, transparent 1px, transparent 4px);
+  mix-blend-mode: soft-light;
+  opacity: 0.25;
+}
+
+.vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, transparent 38%, rgba(0,0,0,0.56) 100%);
 }
 
 .aurora {
   position: absolute;
   border-radius: 9999px;
-  filter: blur(70px);
-  opacity: 0.45;
-  animation: drift 16s ease-in-out infinite;
+  filter: blur(78px);
+  opacity: 0.5;
+  animation: drift 20s ease-in-out infinite;
 }
 .aurora-one {
   width: 36rem;
@@ -28,20 +43,86 @@ html, body {
   background: radial-gradient(circle, rgba(19, 151, 255, 0.55), transparent 65%);
 }
 .aurora-two {
-  width: 40rem;
-  height: 40rem;
+  width: 42rem;
+  height: 42rem;
   bottom: -14rem;
   right: -12rem;
   background: radial-gradient(circle, rgba(79, 209, 255, 0.35), rgba(244, 197, 66, 0.2), transparent 68%);
   animation-delay: 3s;
 }
+.aurora-three {
+  width: 28rem;
+  height: 28rem;
+  top: 18%;
+  right: 35%;
+  background: radial-gradient(circle, rgba(158, 86, 255, 0.32), transparent 70%);
+  animation-delay: 6s;
+}
+
+.hero-stage {
+  perspective: 1200px;
+}
+
+.hero-noise {
+  position: absolute;
+  inset: -15%;
+  background-image: radial-gradient(rgba(255,255,255,0.06) 0.6px, transparent 0.6px);
+  background-size: 3px 3px;
+  opacity: 0.22;
+  mask-image: radial-gradient(circle at center, black, transparent 78%);
+}
+
+.hero-orbit {
+  position: absolute;
+  border: 1px solid rgba(124, 202, 255, 0.24);
+  border-radius: 999px;
+  transform-style: preserve-3d;
+}
+
+.hero-orbit-a {
+  width: 620px;
+  height: 620px;
+  top: -320px;
+  right: -120px;
+  animation: orbitSpin 22s linear infinite;
+}
+
+.hero-orbit-b {
+  width: 420px;
+  height: 420px;
+  bottom: -170px;
+  left: -130px;
+  border-color: rgba(244, 197, 66, 0.25);
+  animation: orbitSpinReverse 18s linear infinite;
+}
+
+.hero-beam {
+  position: absolute;
+  width: 45vw;
+  height: 100%;
+  top: -25%;
+  transform: rotate(18deg);
+  filter: blur(4px);
+}
+
+.hero-beam-a {
+  left: 18%;
+  background: linear-gradient(180deg, rgba(79, 209, 255, 0.14), transparent 70%);
+  animation: beamPulse 8s ease-in-out infinite;
+}
+
+.hero-beam-b {
+  right: -4%;
+  background: linear-gradient(180deg, rgba(244, 197, 66, 0.12), transparent 75%);
+  animation: beamPulse 9s ease-in-out infinite reverse;
+}
 
 .glass-panel {
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: linear-gradient(160deg, rgba(13, 21, 34, 0.82), rgba(7, 12, 18, 0.56));
-  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(160deg, rgba(13, 21, 34, 0.85), rgba(7, 12, 18, 0.58));
+  backdrop-filter: blur(14px);
   border-radius: 1rem;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 15px 35px rgba(3, 10, 19, 0.45);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 18px 45px rgba(3, 10, 19, 0.56);
 }
 
 .glow-border {
@@ -53,10 +134,33 @@ html, body {
   inset: -1px;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(135deg, rgba(79,209,255,0.6), rgba(244,197,66,0.35), rgba(79,209,255,0.2));
+  background: linear-gradient(135deg, rgba(79,209,255,0.75), rgba(244,197,66,0.42), rgba(158,86,255,0.4));
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
+}
+
+.story-ribbon {
+  position: relative;
+  border: 1px solid rgba(145, 210, 255, 0.26);
+  background: linear-gradient(120deg, rgba(8, 18, 30, 0.78), rgba(18, 34, 53, 0.64));
+  box-shadow: 0 20px 60px rgba(2, 10, 20, 0.6);
+}
+.story-ribbon::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(79,209,255,0.08), transparent);
+  transform: translateX(-100%);
+  animation: sweep 7s ease-in-out infinite;
+}
+
+.story-node {
+  position: relative;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(7, 13, 20, 0.72);
+  border-radius: 0.9rem;
+  padding: 1rem;
 }
 
 .btn-primary, .btn-secondary {
@@ -117,5 +221,25 @@ html, body {
 
 @keyframes drift {
   0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-24px) scale(1.06); }
+  50% { transform: translateY(-24px) scale(1.08); }
+}
+
+@keyframes orbitSpin {
+  from { transform: rotateX(72deg) rotateY(0deg) rotateZ(0deg); }
+  to { transform: rotateX(72deg) rotateY(0deg) rotateZ(360deg); }
+}
+
+@keyframes orbitSpinReverse {
+  from { transform: rotateX(72deg) rotateY(0deg) rotateZ(360deg); }
+  to { transform: rotateX(72deg) rotateY(0deg) rotateZ(0deg); }
+}
+
+@keyframes beamPulse {
+  0%, 100% { opacity: 0.4; transform: rotate(18deg) translateY(0); }
+  50% { opacity: 0.85; transform: rotate(20deg) translateY(-20px); }
+}
+
+@keyframes sweep {
+  0%, 100% { transform: translateX(-100%); }
+  45%, 65% { transform: translateX(100%); }
 }
