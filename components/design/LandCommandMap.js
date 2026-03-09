@@ -1,6 +1,40 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+
+const MAPBOX_GL_SCRIPT_ID = 'mapbox-gl-script';
+const MAPBOX_GL_CSS_ID = 'mapbox-gl-css';
+const MAPBOX_GL_SCRIPT_SRC = 'https://api.mapbox.com/mapbox-gl-js/v3.9.4/mapbox-gl.js';
+const MAPBOX_GL_CSS_HREF = 'https://api.mapbox.com/mapbox-gl-js/v3.9.4/mapbox-gl.css';
+
+function ensureMapboxAssets() {
+  if (typeof window === 'undefined') return Promise.resolve(null);
+  if (window.mapboxgl) return Promise.resolve(window.mapboxgl);
+
+  if (!document.getElementById(MAPBOX_GL_CSS_ID)) {
+    const link = document.createElement('link');
+    link.id = MAPBOX_GL_CSS_ID;
+    link.rel = 'stylesheet';
+    link.href = MAPBOX_GL_CSS_HREF;
+    document.head.appendChild(link);
+  }
+
+  const existingScript = document.getElementById(MAPBOX_GL_SCRIPT_ID);
+  if (existingScript) {
+    return new Promise((resolve, reject) => {
+      existingScript.addEventListener('load', () => resolve(window.mapboxgl), { once: true });
+      existingScript.addEventListener('error', () => reject(new Error('Failed to load Mapbox GL JS.')), { once: true });
+    });
+  }
+
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.id = MAPBOX_GL_SCRIPT_ID;
+    script.src = MAPBOX_GL_SCRIPT_SRC;
+    script.async = true;
+    script.onload = () => resolve(window.mapboxgl);
+    script.onerror = () => reject(new Error('Failed to load Mapbox GL JS.'));
+    document.body.appendChild(script);
+  });
+}
 
 const SATELLITE_STYLE = {
   version: 8,
@@ -91,10 +125,12 @@ export default function LandCommandMap({ className = '', boundary = [], onBounda
   const mapRef = useRef(null);
   const markersRef = useRef([]);
   const drawModeRef = useRef(false);
+  const mapboxRef = useRef(null);
   const boundaryRef = useRef(boundary || []);
   const [searchValue, setSearchValue] = useState('Lagos, Nigeria');
   const [drawMode, setDrawMode] = useState(false);
   const [localBoundary, setLocalBoundary] = useState(boundary || []);
+  const [mapboxLoadError, setMapboxLoadError] = useState('');
 
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
@@ -113,48 +149,57 @@ export default function LandCommandMap({ className = '', boundary = [], onBounda
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
+    let destroyed = false;
+    ensureMapboxAssets().then((mapboxgl) => {
+      if (destroyed || !mapboxgl || !containerRef.current) return;
 
-    if (mapboxToken) mapboxgl.accessToken = mapboxToken;
+      mapboxRef.current = mapboxgl;
+      setMapboxLoadError('');
+      if (mapboxToken) mapboxgl.accessToken = mapboxToken;
 
-    const map = new mapboxgl.Map({
-      container: containerRef.current,
-      style: mapboxToken ? 'mapbox://styles/mapbox/satellite-streets-v12' : SATELLITE_STYLE,
-      center: [3.3792, 6.5244],
-      zoom: 14
-    });
+      const map = new mapboxgl.Map({
+        container: containerRef.current,
+        style: mapboxToken ? 'mapbox://styles/mapbox/satellite-streets-v12' : SATELLITE_STYLE,
+        center: [3.3792, 6.5244],
+        zoom: 14
+      });
 
-    map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-    mapRef.current = map;
+      map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+      mapRef.current = map;
 
-    map.on('load', () => {
-      map.addSource('parcel-boundary', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-      map.addLayer({ id: 'parcel-fill', type: 'fill', source: 'parcel-boundary', paint: { 'fill-color': '#00d4ff', 'fill-opacity': 0.18 } });
-      map.addLayer({ id: 'parcel-outline', type: 'line', source: 'parcel-boundary', paint: { 'line-color': '#4ff0ff', 'line-width': 3 } });
+      map.on('load', () => {
+        map.addSource('parcel-boundary', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+        map.addLayer({ id: 'parcel-fill', type: 'fill', source: 'parcel-boundary', paint: { 'fill-color': '#00d4ff', 'fill-opacity': 0.18 } });
+        map.addLayer({ id: 'parcel-outline', type: 'line', source: 'parcel-boundary', paint: { 'line-color': '#4ff0ff', 'line-width': 3 } });
 
-      map.addSource('scenario-roads', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-      map.addLayer({ id: 'scenario-roads-layer', type: 'line', source: 'scenario-roads', paint: { 'line-color': '#f4c542', 'line-width': 1.4 } });
+        map.addSource('scenario-roads', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+        map.addLayer({ id: 'scenario-roads-layer', type: 'line', source: 'scenario-roads', paint: { 'line-color': '#f4c542', 'line-width': 1.4 } });
 
-      map.addSource('scenario-plots', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-      map.addLayer({ id: 'scenario-plots-layer', type: 'line', source: 'scenario-plots', paint: { 'line-color': '#89f4ff', 'line-width': 0.8, 'line-opacity': 0.6 } });
-    });
+        map.addSource('scenario-plots', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+        map.addLayer({ id: 'scenario-plots-layer', type: 'line', source: 'scenario-plots', paint: { 'line-color': '#89f4ff', 'line-width': 0.8, 'line-opacity': 0.6 } });
+      });
 
-    map.on('click', (event) => {
-      if (!drawModeRef.current) return;
-      const nextBoundary = [...(boundaryRef.current || []), [event.lngLat.lng, event.lngLat.lat]];
-      setLocalBoundary(nextBoundary);
-      onBoundaryChange?.(nextBoundary);
-      boundaryRef.current = nextBoundary;
+      map.on('click', (event) => {
+        if (!drawModeRef.current) return;
+        const nextBoundary = [...(boundaryRef.current || []), [event.lngLat.lng, event.lngLat.lat]];
+        setLocalBoundary(nextBoundary);
+        onBoundaryChange?.(nextBoundary);
+        boundaryRef.current = nextBoundary;
+      });
+    }).catch(() => {
+      setMapboxLoadError('Map preview is unavailable right now.');
     });
 
     return () => {
-      map.remove();
+      destroyed = true;
+      if (mapRef.current) mapRef.current.remove();
       mapRef.current = null;
     };
   }, [mapboxToken, onBoundaryChange]);
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !map.getSource('parcel-boundary')) return;
+    if (!map || !mapboxRef.current || !map.getSource('parcel-boundary')) return;
 
     map.getSource('parcel-boundary').setData(boundaryGeoJson || { type: 'FeatureCollection', features: [] });
     map.getSource('scenario-roads').setData(overlays.roads);
@@ -166,7 +211,7 @@ export default function LandCommandMap({ className = '', boundary = [], onBounda
     boundaryRef.current = localBoundary;
 
     localBoundary.forEach((point, index) => {
-      const marker = new mapboxgl.Marker({ color: '#34e7ff', draggable: true })
+      const marker = new mapboxRef.current.Marker({ color: '#34e7ff', draggable: true })
         .setLngLat(point)
         .addTo(map);
 
@@ -211,6 +256,7 @@ export default function LandCommandMap({ className = '', boundary = [], onBounda
         <button className={`rounded-md px-3 py-2 text-xs ${drawMode ? 'bg-cyan-300 text-slate-900' : 'bg-slate-800 text-cyan-100'}`} onClick={() => setDrawMode((v) => !v)} type="button">{drawMode ? 'Drawing ON' : 'Draw boundary'}</button>
         <button className="rounded-md border border-white/20 px-3 py-2 text-xs text-cyan-100" onClick={clearBoundary} type="button">Clear</button>
       </div>
+      {mapboxLoadError ? <div className="px-3 py-2 text-xs text-amber-300">{mapboxLoadError}</div> : null}
       <div ref={containerRef} className="h-full min-h-[360px] w-full" />
     </div>
   );
