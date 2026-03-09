@@ -1,8 +1,12 @@
-import { getProjectState } from '../../../../../lib/db';
+import { requireProjectAccess } from '../../../../../lib/apiGuard';
+import { getProjectState } from '../../../../../lib/platformStore';
 
-export default function handler(req, res) {
-  const state = getProjectState(req.query.projectId);
-  if (!state) return res.status(404).json({ error: 'project not found' });
-  const best = state.scenarios.sort((a, b) => b.optimizationScore - a.optimizationScore)[0];
-  return res.status(200).json({ projectId: req.query.projectId, selectedScenario: best.id, confidence: best.feasibility, summary: `Best option is ${best.name} with score ${best.optimizationScore}.` });
+export default async function handler(req, res) {
+  const access = await requireProjectAccess(req, res, req.query.projectId);
+  if (!access) return;
+
+  const state = await getProjectState(req.query.projectId);
+  const scenarios = state.scenarios;
+  const ranked = [...scenarios].sort((a, b) => b.optimizationScore - a.optimizationScore);
+  return res.status(200).json({ selectedScenario: ranked[0], comparison: ranked.map((s) => ({ id: s.id, name: s.name, score: s.optimizationScore, feasibility: s.feasibility, margin: s.metrics.margin })) });
 }

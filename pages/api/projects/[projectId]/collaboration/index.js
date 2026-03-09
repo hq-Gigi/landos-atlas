@@ -1,13 +1,30 @@
-import { db } from '../../../../../lib/db';
+import { prisma } from '../../../../../lib/prisma';
+import { requireProjectAccess } from '../../../../../lib/apiGuard';
+import { addComment, addTask, logActivity } from '../../../../../lib/platformStore';
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
+  const access = await requireProjectAccess(req, res, req.query.projectId);
+  if (!access) return;
+
   if (req.method === 'GET') {
-    return res.status(200).json({ comments: db.comments.filter((c) => c.projectId === req.query.projectId), activity: db.activities.filter((a) => a.projectId === req.query.projectId) });
+    const [comments, activity, tasks] = await Promise.all([
+      prisma.comment.findMany({ where: { projectId: req.query.projectId }, orderBy: { createdAt: 'desc' } }),
+      prisma.activityLog.findMany({ where: { projectId: req.query.projectId }, orderBy: { createdAt: 'desc' } }),
+      prisma.task.findMany({ where: { projectId: req.query.projectId }, orderBy: { id: 'desc' } })
+    ]);
+    return res.status(200).json({ comments, activity, tasks });
   }
+
   if (req.method === 'POST') {
-    const comment = { id: `c${db.comments.length + 1}`, projectId: req.query.projectId, body: req.body?.body, author: req.body?.author || 'Unknown', scenarioId: req.body?.scenarioId, createdAt: new Date().toISOString() };
-    db.comments.push(comment);
+    if (req.body?.type === 'task') {
+      const task = await addTask(req.query.projectId, access.user.id, req.body.title, req.body.dueDate);
+      await logActivity(req.query.projectId, access.user.id, 'TASK_CREATED', { taskId: task.id });
+      return res.status(201).json(task);
+    }
+    const comment = await addComment(req.query.projectId, access.user.id, req.body?.body, req.body?.scenarioId || null);
+    await logActivity(req.query.projectId, access.user.id, 'COMMENT_ADDED', { commentId: comment.id, scenarioId: comment.scenarioId });
     return res.status(201).json(comment);
   }
+
   return res.status(405).end();
 }

@@ -1,8 +1,10 @@
-import { db } from '../../../../../lib/db';
+import { prisma } from '../../../../../lib/prisma';
+import { requireProjectAccess } from '../../../../../lib/apiGuard';
 
-export default function handler(req, res) {
-  if (req.method === 'GET') {
-    return res.status(200).json(db.exports.filter((e) => e.projectId === req.query.projectId));
-  }
-  return res.status(405).end();
+export default async function handler(req, res) {
+  const access = await requireProjectAccess(req, res, req.query.projectId);
+  if (!access) return;
+  if (req.method !== 'GET') return res.status(405).end();
+  const records = await prisma.export.findMany({ where: { projectId: req.query.projectId }, orderBy: { createdAt: 'desc' } });
+  return res.status(200).json(records);
 }
