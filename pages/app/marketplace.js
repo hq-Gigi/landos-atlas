@@ -2,6 +2,27 @@ import { requirePageAuth } from '../../lib/ssrAuth';
 import { useEffect, useState } from 'react';
 import PageShell from '../../components/design/PageShell';
 import { fetchWithAuth } from '../../lib/clientAuth';
+import dynamic from 'next/dynamic';
+
+const LandCommandMap = dynamic(() => import('../../components/design/LandCommandMap'), { ssr: false });
+
+function ListingCard({ title, meta }) {
+  return (
+    <li className="glass-panel overflow-hidden">
+      <div className="h-[170px] border-b border-white/10">
+        <LandCommandMap className="h-full w-full" autoRotate={false} />
+      </div>
+      <div className="p-4">
+        <p className="font-semibold">{title}</p>
+        <div className="mt-3 flex flex-wrap gap-2 text-xs text-cyan-100/90">
+          <span className="rounded-full border border-cyan-300/30 px-2 py-1">{meta}</span>
+          <span className="rounded-full border border-cyan-300/30 px-2 py-1">Satellite overlay</span>
+          <span className="rounded-full border border-cyan-300/30 px-2 py-1">Parcel grid</span>
+        </div>
+      </div>
+    </li>
+  );
+}
 
 export default function MarketplacePage() {
   const [data, setData] = useState({ listings: [], opportunities: [] });
@@ -30,7 +51,7 @@ export default function MarketplacePage() {
     try {
       await fetchWithAuth('/api/marketplace', {
         method: 'POST',
-        body: JSON.stringify({ title: listingTitle.trim(), payload: {} })
+        body: JSON.stringify({ title: listingTitle.trim(), payload: { mapReady: true } })
       });
       setListingTitle('');
       load();
@@ -45,7 +66,7 @@ export default function MarketplacePage() {
     try {
       await fetchWithAuth('/api/marketplace', {
         method: 'POST',
-        body: JSON.stringify({ kind: 'opportunity', title: opportunityTitle.trim(), type: 'JV', payload: {} })
+        body: JSON.stringify({ kind: 'opportunity', title: opportunityTitle.trim(), type: 'JV', payload: { mapReady: true } })
       });
       setOpportunityTitle('');
       load();
@@ -56,9 +77,9 @@ export default function MarketplacePage() {
 
   return (
     <PageShell>
-      <section className="mx-auto max-w-5xl px-6 py-12">
-        <h1 className="text-3xl font-bold">Marketplace</h1>
-        <p className="mt-2 text-[#b5cde6]">Publish listings and opportunities for investment and delivery partners.</p>
+      <section className="mx-auto max-w-6xl px-6 py-12">
+        <h1 className="text-3xl font-bold">Land Marketplace</h1>
+        <p className="mt-2 text-[#b5cde6]">Publish development parcels with satellite previews, boundary overlays, and investment context.</p>
 
         {error && <p className="mt-3 text-red-300">{error}</p>}
         {loading && <p className="mt-3 text-cyan-200">Loading marketplace…</p>}
@@ -76,15 +97,14 @@ export default function MarketplacePage() {
           </div>
         </div>
 
-        <h2 className="mt-6 font-semibold">Listings</h2>
-        <ul className="mt-2 space-y-2">{data.listings.map((x) => <li key={x.id} className="glass-panel p-3">{x.title} · {x.status}</li>)}</ul>
+        <h2 className="mt-8 font-semibold">Listings</h2>
+        <ul className="mt-3 grid gap-3 md:grid-cols-2">{data.listings.map((x) => <ListingCard key={x.id} title={x.title} meta={`Status: ${x.status}`} />)}</ul>
 
-        <h2 className="mt-6 font-semibold">Opportunities</h2>
-        <ul className="mt-2 space-y-2">{data.opportunities.map((x) => <li key={x.id} className="glass-panel p-3">{x.title} · {x.type} · {x.status}</li>)}</ul>
+        <h2 className="mt-8 font-semibold">Opportunities</h2>
+        <ul className="mt-3 grid gap-3 md:grid-cols-2">{data.opportunities.map((x) => <ListingCard key={x.id} title={x.title} meta={`${x.type} · ${x.status}`} />)}</ul>
       </section>
     </PageShell>
   );
 }
-
 
 export const getServerSideProps = requirePageAuth();
