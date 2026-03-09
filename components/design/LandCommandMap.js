@@ -141,7 +141,7 @@ function applyGroupVisibility(map, enabledGroups) {
   });
 }
 
-export default function LandCommandMap({ className = '', boundary = [], scenario = null, onBoundaryChange, onParcelMetricsChange, projects = [], showProjectMarkers = false }) {
+export default function LandCommandMap({ className = '', boundary = [], scenario = null, onBoundaryChange, onParcelMetricsChange, projects = [], showProjectMarkers = false, discoveryMode = false, discoveryParcels = [], onDiscoveryParcelClick, onDiscoveryScan }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef([]);
@@ -163,6 +163,25 @@ export default function LandCommandMap({ className = '', boundary = [], scenario
   }, [boundary]);
 
   const boundaryGeoJson = useMemo(() => toGeoJson(localBoundary), [localBoundary]);
+  const discoveryGeoJson = useMemo(() => ({
+    type: 'FeatureCollection',
+    features: (discoveryParcels || []).map((parcel) => ({
+      type: 'Feature',
+      properties: {
+        id: parcel.id,
+        title: parcel.title,
+        opportunityScore: parcel.opportunityScore,
+        recommendation: parcel.scenarioRecommendation,
+        estimatedYield: parcel.estimatedDevelopmentYield,
+        area: parcel.area,
+        frontage: parcel.frontage
+      },
+      geometry: {
+        type: 'Polygon',
+        coordinates: [[...(parcel.boundary || []).map((point) => [point.lng, point.lat]), [parcel.boundary?.[0]?.lng, parcel.boundary?.[0]?.lat]]]
+      }
+    })).filter((feature) => feature.geometry.coordinates[0].length > 3)
+  }), [discoveryParcels]);
   const scenarioFeatures = useMemo(() => {
     const roads = (scenario?.layout?.roadLines || []).map((line, index) => ({
       type: 'Feature',
@@ -217,6 +236,34 @@ export default function LandCommandMap({ className = '', boundary = [], scenario
         map.addLayer({ id: 'scenario-plots-fill', type: 'fill', source: 'scenario-plots', paint: { 'fill-color': '#4f46e5', 'fill-opacity': 0.2 } });
         map.addLayer({ id: 'scenario-plots', type: 'line', source: 'scenario-plots', paint: { 'line-color': '#94b8ff', 'line-width': 1.1, 'line-opacity': 0.9 } });
 
+        map.addSource('opportunity-parcels', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+        map.addLayer({
+          id: 'opportunity-parcels-fill',
+          type: 'fill',
+          source: 'opportunity-parcels',
+          paint: {
+            'fill-color': [
+              'interpolate',
+              ['linear'],
+              ['get', 'opportunityScore'],
+              0, '#1e3a8a',
+              50, '#f59e0b',
+              80, '#ef4444',
+              100, '#f97316'
+            ],
+            'fill-opacity': 0.36
+          }
+        });
+        map.addLayer({ id: 'opportunity-parcels-outline', type: 'line', source: 'opportunity-parcels', paint: { 'line-color': '#f8fafc', 'line-width': 1.5, 'line-opacity': 0.7 } });
+
+        map.on('click', 'opportunity-parcels-fill', (event) => {
+          const feature = event.features?.[0];
+          if (!feature) return;
+          onDiscoveryParcelClick?.(feature.properties);
+        });
+        map.on('mouseenter', 'opportunity-parcels-fill', () => { map.getCanvas().style.cursor = 'pointer'; });
+        map.on('mouseleave', 'opportunity-parcels-fill', () => { map.getCanvas().style.cursor = ''; });
+
         if (mapboxToken) {
           map.addSource('mapbox-dem', { type: 'raster-dem', url: 'mapbox://mapbox.mapbox-terrain-dem-v1', tileSize: 512, maxzoom: 14 });
           map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.1 });
@@ -238,7 +285,7 @@ export default function LandCommandMap({ className = '', boundary = [], scenario
       if (mapRef.current) mapRef.current.remove();
       mapRef.current = null;
     };
-  }, [layersEnabled, mapboxToken, onBoundaryChange]);
+  }, [layersEnabled, mapboxToken, onBoundaryChange, onDiscoveryParcelClick]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -246,6 +293,7 @@ export default function LandCommandMap({ className = '', boundary = [], scenario
     map.getSource('parcel-boundary').setData(boundaryGeoJson || { type: 'FeatureCollection', features: [] });
     map.getSource('scenario-roads')?.setData({ type: 'FeatureCollection', features: scenarioFeatures.filter((f) => f.properties.kind === 'road') });
     map.getSource('scenario-plots')?.setData({ type: 'FeatureCollection', features: scenarioFeatures.filter((f) => f.properties.kind === 'plot') });
+    map.getSource('opportunity-parcels')?.setData(discoveryGeoJson);
 
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
@@ -275,7 +323,7 @@ export default function LandCommandMap({ className = '', boundary = [], scenario
 
     const bbox = getBBox(localBoundary);
     if (bbox) map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: 60, duration: 700 });
-  }, [boundaryGeoJson, localBoundary, onBoundaryChange, projects, scenarioFeatures, showProjectMarkers]);
+  }, [boundaryGeoJson, discoveryGeoJson, localBoundary, onBoundaryChange, projects, scenarioFeatures, showProjectMarkers]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -284,7 +332,8 @@ export default function LandCommandMap({ className = '', boundary = [], scenario
     if (mapboxToken && map.getTerrain()) map.setTerrain({ source: 'mapbox-dem', exaggeration: layersEnabled.terrain ? 1.2 : 1.0 });
     ['parcel-fill', 'parcel-outline'].forEach((id) => map.getLayer(id) && map.setLayoutProperty(id, 'visibility', layersEnabled.parcels ? 'visible' : 'none'));
     ['scenario-roads', 'scenario-plots-fill', 'scenario-plots'].forEach((id) => map.getLayer(id) && map.setLayoutProperty(id, 'visibility', layersEnabled.scenarios ? 'visible' : 'none'));
-  }, [layersEnabled, mapboxToken]);
+    ['opportunity-parcels-fill', 'opportunity-parcels-outline'].forEach((id) => map.getLayer(id) && map.setLayoutProperty(id, 'visibility', discoveryMode ? 'visible' : 'none'));
+  }, [discoveryMode, layersEnabled, mapboxToken]);
 
 
 
@@ -336,6 +385,15 @@ export default function LandCommandMap({ className = '', boundary = [], scenario
           <input className="w-full rounded-md border border-white/20 bg-[#071523] px-3 py-2 text-sm" value={searchValue} onChange={(e) => setSearchValue(e.target.value)} placeholder="Search city, region, or coordinates" />
           <button className="btn-secondary text-xs" type="submit">Locate</button>
         </form>
+        {discoveryMode ? <button className="rounded-md bg-amber-300 px-3 py-2 text-xs font-semibold text-slate-900" type="button" onClick={() => {
+          const center = mapRef.current?.getCenter();
+          const bounds = mapRef.current?.getBounds();
+          onDiscoveryScan?.({
+            center: center ? { lng: center.lng, lat: center.lat } : null,
+            bounds: bounds ? { west: bounds.getWest(), south: bounds.getSouth(), east: bounds.getEast(), north: bounds.getNorth() } : null,
+            query: searchValue
+          });
+        }}>Scan opportunities</button> : null}
         <button className={`rounded-md px-3 py-2 text-xs ${drawMode ? 'bg-cyan-300 text-slate-900' : 'bg-slate-800 text-cyan-100'}`} onClick={() => setDrawMode((v) => !v)} type="button">{drawMode ? 'Drawing ON' : 'Trace parcel'}</button>
       </div>
       <div className="grid gap-2 border-b border-white/10 bg-[#04111b]/95 px-3 py-2 text-xs md:grid-cols-5">
