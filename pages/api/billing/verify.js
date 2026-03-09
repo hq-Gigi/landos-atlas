@@ -1,4 +1,5 @@
 import { prisma } from '../../../lib/prisma';
+import { unlockProjectPremiumExports } from '../../../lib/paymentUnlock';
 
 export default async function handler(req, res) {
   const reference = req.query.reference;
@@ -9,6 +10,7 @@ export default async function handler(req, res) {
   if (!process.env.PAYSTACK_SECRET_KEY) {
     if (payment.status === 'PENDING') {
       const updated = await prisma.payment.update({ where: { reference }, data: { status: 'SUCCESS', metadata: { ...(payment.metadata || {}), verifiedBy: 'dev-fallback' } } });
+      await unlockProjectPremiumExports(updated.projectId, reference);
       return res.status(200).json(updated);
     }
     return res.status(200).json(payment);
@@ -25,6 +27,8 @@ export default async function handler(req, res) {
     where: { reference },
     data: { status: success ? 'SUCCESS' : 'FAILED', metadata: { ...(payment.metadata || {}), verification: result?.data || {} } }
   });
+
+  if (success) await unlockProjectPremiumExports(updated.projectId, reference);
 
   return res.status(200).json(updated);
 }
