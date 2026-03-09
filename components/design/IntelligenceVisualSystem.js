@@ -181,11 +181,11 @@ function SceneShell({ children, camera = [0, 1.6, 4.2] }) {
 }
 
 const views = [
-  { key: 'parcel', title: 'Parcel intelligence field', copy: '3D parcel extrusion prioritizes topology and score dominance to expose actionable opportunity in seconds.', scene: <SceneShell><ParcelExtrusion parcels={[{ id: 1, score: 72 }, { id: 2, score: 65 }, { id: 3, score: 89 }, { id: 4, score: 58 }, { id: 5, score: 78 }, { id: 6, score: 86 }, { id: 7, score: 61 }, { id: 8, score: 95 }, { id: 9, score: 69 }, { id: 10, score: 83 }, { id: 11, score: 62 }, { id: 12, score: 74 }, { id: 13, score: 91 }, { id: 14, score: 57 }, { id: 15, score: 80 }]} /></SceneShell> },
-  { key: 'scenario', title: 'Scenario generation engine', copy: 'Deterministic pathways animate planning alternatives while preserving confidence context and delivery inevitability.', scene: <SceneShell><ScenarioGenerationField /></SceneShell> },
-  { key: 'financial', title: 'Financial core visualization', copy: 'RevenueRing, CostLayer, and MarginCore synchronize feasibility signals into one executive object.', scene: <SceneShell><FinancialCoreScene /></SceneShell> },
-  { key: 'collab', title: 'Collaboration network graph', copy: 'Stakeholder nodes and interaction vectors reveal coordination velocity across execution-critical actors.', scene: <SceneShell><CollaborationGraph /></SceneShell> },
-  { key: 'planetary', title: 'Global land signal map', copy: 'Planetary signal mesh tracks concurrent active parcels and strategic portfolio command worldwide.', scene: <SceneShell camera={[0, 0.8, 3.8]}><PlanetarySignals /></SceneShell> }
+  { key: 'parcel', title: 'Parcel intelligence field', copy: '3D parcel extrusion reveals buildable intensity, boundary priority, and land suitability at a glance.', scene: <SceneShell><ParcelExtrusion parcels={[{ id: 1, score: 72 }, { id: 2, score: 65 }, { id: 3, score: 89 }, { id: 4, score: 58 }, { id: 5, score: 78 }, { id: 6, score: 86 }, { id: 7, score: 61 }, { id: 8, score: 95 }, { id: 9, score: 69 }, { id: 10, score: 83 }, { id: 11, score: 62 }, { id: 12, score: 74 }, { id: 13, score: 91 }, { id: 14, score: 57 }, { id: 15, score: 80 }]} /></SceneShell> },
+  { key: 'scenario', title: 'Scenario generation engine', copy: 'Road and plot alternatives animate as scenario options so teams can compare subdivision layouts visually.', scene: <SceneShell><ScenarioGenerationField /></SceneShell> },
+  { key: 'financial', title: 'Financial core visualization', copy: 'Revenue, cost, and margin layers combine into one feasibility view for faster investment decisions.', scene: <SceneShell><FinancialCoreScene /></SceneShell> },
+  { key: 'collab', title: 'Collaboration network graph', copy: 'Developer, planner, investor, and regulator links show who is blocking or accelerating delivery.', scene: <SceneShell><CollaborationGraph /></SceneShell> },
+  { key: 'planetary', title: 'Global land signal map', copy: 'Global signal map highlights active land opportunities and connected development programs worldwide.', scene: <SceneShell camera={[0, 0.8, 3.8]}><PlanetarySignals /></SceneShell> }
 ];
 
 export default function IntelligenceVisualSystem() {
