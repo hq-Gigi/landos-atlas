@@ -40,6 +40,11 @@ export default function Hero({ variant = 'a', onPrimaryCta }) {
           <p className="eyebrow">{selected.label}</p>
           <h1 className="mt-5 text-3xl font-semibold leading-tight sm:text-5xl md:text-6xl">{selected.title}</h1>
           <p className="mt-5 max-w-2xl text-base text-[#b5cde6] sm:mt-6 sm:text-lg">Satellite imagery, parcel optimization, road network synthesis, and real estate feasibility intelligence in one operational UI.</p>
+          <div className="mt-5 grid gap-2 text-xs uppercase tracking-[0.16em] text-cyan-100/75 sm:grid-cols-3">
+            <span className="rounded-lg border border-cyan-200/20 bg-[#081524]/70 px-3 py-2">Search + shortlist parcels</span>
+            <span className="rounded-lg border border-cyan-200/20 bg-[#081524]/70 px-3 py-2">Generate road/plot scenarios</span>
+            <span className="rounded-lg border border-cyan-200/20 bg-[#081524]/70 px-3 py-2">Model feasibility + returns</span>
+          </div>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <Link href="/app" className="btn-primary w-full sm:w-auto" onClick={onPrimaryCta}>{selected.cta}</Link>
             <Link href="/experience" className="btn-secondary w-full sm:w-auto">See map intelligence walkthrough</Link>
