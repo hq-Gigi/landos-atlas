@@ -104,6 +104,8 @@ export default function ProjectWorkspace({ projectId, section }) {
   const [taskTitle, setTaskTitle] = useState('');
   const [taskDueDate, setTaskDueDate] = useState('');
   const [exportStatus, setExportStatus] = useState('');
+  const [selectedScenarioId, setSelectedScenarioId] = useState('');
+  const [generatorConfig, setGeneratorConfig] = useState({ targetPlotSize: 500, roadWidth: 9, objective: 'BALANCED' });
 
   const loadState = async () => {
     try {
@@ -114,6 +116,11 @@ export default function ProjectWorkspace({ projectId, section }) {
       setBoundaryInput(boundaryToInput(data.boundary));
       setZoning(data?.project?.landProfile?.zoning || '');
       setAssumptionsInput(JSON.stringify(data?.project?.landProfile?.assumptions || { salePricePerPlot: 110000 }, null, 2));
+      setGeneratorConfig({
+        targetPlotSize: Number(data?.project?.landProfile?.assumptions?.targetPlotSize || 500),
+        roadWidth: Number(data?.project?.landProfile?.assumptions?.roadWidth || 9),
+        objective: data?.project?.objective || 'BALANCED'
+      });
     } catch {
       setError('Unable to load project intelligence state.');
       setState(null);
@@ -129,6 +136,13 @@ export default function ProjectWorkspace({ projectId, section }) {
     const scenarios = state?.scenarios || [];
     return [...scenarios].sort((a, b) => b.optimizationScore - a.optimizationScore)[0];
   }, [state]);
+
+  const selectedScenario = useMemo(() => {
+    const scenarios = state?.scenarios || [];
+    if (!scenarios.length) return null;
+    return scenarios.find((scenario) => scenario.id === selectedScenarioId) || topScenario || scenarios[0];
+  }, [state, selectedScenarioId, topScenario]);
+
 
   const boundaryMetrics = state?.project?.boundaries?.[0];
   const feasibilityCount = state?.project?.feasibilityReports?.length || 0;
@@ -204,6 +218,33 @@ export default function ProjectWorkspace({ projectId, section }) {
     }
   };
 
+  const generateLayout = async () => {
+    setSaving(true);
+    setError('');
+    try {
+      const assumptions = JSON.parse(assumptionsInput || '{}');
+      const payload = {
+        objective: generatorConfig.objective,
+        targetPlotSize: Number(generatorConfig.targetPlotSize) || 500,
+        roadWidth: Number(generatorConfig.roadWidth) || 9,
+        assumptions: { ...assumptions, targetPlotSize: Number(generatorConfig.targetPlotSize) || 500, roadWidth: Number(generatorConfig.roadWidth) || 9 }
+      };
+      const res = await fetch(`/api/projects/${projectId}/scenarios`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Scenario generation failed');
+      await loadState();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const generateExport = async (type) => {
     setExportStatus(`Generating ${type} export...`);
     try {
@@ -271,7 +312,7 @@ export default function ProjectWorkspace({ projectId, section }) {
           <LandCommandMap
             className="h-[420px] w-full lg:h-[560px]"
             boundary={state?.boundary || []}
-            scenario={topScenario}
+            scenario={selectedScenario}
             onBoundaryChange={(next) => {
               setBoundaryInput(boundaryToInput(next));
               setState((current) => (current ? { ...current, boundary: next } : current));
@@ -347,14 +388,43 @@ export default function ProjectWorkspace({ projectId, section }) {
       )}
 
       {(section === 'scenarios' || section === 'optimization' || section === 'feasibility') && (
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
-          {(state?.scenarios || []).slice(0, 3).map((scenario) => (
-            <div key={scenario.id} className="glass-panel p-4">
-              <h3 className="font-semibold">{scenario.name}</h3>
-              <p className="mt-2 text-sm text-[#b5cde6]">{scenario.layout.parcelCount} plots · frontage efficiency {scenario.layout.frontageEfficiency} · road efficiency {scenario.layout.roadNetwork.efficiency}</p>
-              <p className="mt-2 text-xs uppercase tracking-[0.16em] text-cyan-100/70">Revenue {scenario.metrics.revenue.toLocaleString()} · Cost {scenario.metrics.cost.toLocaleString()} · Margin {scenario.metrics.margin}</p>
+        <div className="mt-8 space-y-4">
+          <div className="glass-panel p-4">
+            <h3 className="text-lg font-semibold">Land Subdivision Engine</h3>
+            <div className="mt-3 grid gap-3 md:grid-cols-4">
+              <label className="text-xs">Scenario Objective
+                <select className="mt-1 w-full rounded-lg border border-white/15 bg-[#071523] px-2 py-2" value={generatorConfig.objective} onChange={(e) => setGeneratorConfig((prev) => ({ ...prev, objective: e.target.value }))}>
+                  <option value="MAX_YIELD">MAX_YIELD</option>
+                  <option value="BALANCED">BALANCED</option>
+                  <option value="PREMIUM_LAYOUT">PREMIUM_LAYOUT</option>
+                  <option value="FAST_DEVELOPMENT">FAST_DEVELOPMENT</option>
+                </select>
+              </label>
+              <label className="text-xs">Plot Size Selector (m²)
+                <input className="mt-1 w-full rounded-lg border border-white/15 bg-[#071523] px-2 py-2" type="number" min="120" value={generatorConfig.targetPlotSize} onChange={(e) => setGeneratorConfig((prev) => ({ ...prev, targetPlotSize: Number(e.target.value) }))} />
+              </label>
+              <label className="text-xs">Road Width Selector (m)
+                <input className="mt-1 w-full rounded-lg border border-white/15 bg-[#071523] px-2 py-2" type="number" min="4" value={generatorConfig.roadWidth} onChange={(e) => setGeneratorConfig((prev) => ({ ...prev, roadWidth: Number(e.target.value) }))} />
+              </label>
+              <div className="flex items-end">
+                <button className="btn-primary w-full" disabled={saving} onClick={generateLayout}>{saving ? 'Generating...' : 'Generate Layout'}</button>
+              </div>
             </div>
-          ))}
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            {(state?.scenarios || []).slice(0, 3).map((scenario) => (
+              <div key={scenario.id} className={`glass-panel p-4 ${selectedScenario?.id === scenario.id ? 'ring-1 ring-cyan-300/50' : ''}`}>
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold">{scenario.name}</h3>
+                  <button className="text-xs text-cyan-100" onClick={() => setSelectedScenarioId(scenario.id)}>View</button>
+                </div>
+                <p className="mt-2 text-sm text-[#b5cde6]">{scenario.layout.plotCount || scenario.layout.parcelCount} plots · avg {Math.round(scenario.layout.averagePlotSize || scenario.metrics.averagePlotSize || 0).toLocaleString()} m²</p>
+                <p className="mt-1 text-xs text-cyan-100/80">land utilization {Math.round((scenario.metrics.landUtilization || 0) * 100)}% · road coverage {Math.round((scenario.metrics.roadCoverage || 0) * 100)}%</p>
+                <p className="mt-2 text-xs uppercase tracking-[0.16em] text-cyan-100/70">layout efficiency {scenario.metrics.layoutEfficiency || 0} · margin {scenario.metrics.margin}</p>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
