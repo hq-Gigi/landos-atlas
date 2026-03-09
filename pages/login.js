@@ -19,7 +19,15 @@ export default function LoginPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form)
       });
-      const data = await res.json();
+      const text = await res.text();
+      let data = {};
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch {
+          throw new Error('Login failed due to a server error. Please try again shortly.');
+        }
+      }
       if (!res.ok) throw new Error(data.error || 'Unable to sign in');
       saveSession({ organizationId: data.organizationId });
       fetch('/api/analytics/experiments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ experiment: 'home_hero_v1', variant: 'n/a', eventType: 'login_success' }) }).catch(() => null);
