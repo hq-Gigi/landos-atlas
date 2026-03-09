@@ -23,7 +23,7 @@ export default async function handler(req, res) {
 
     if (!name) return res.status(400).json({ error: 'name is required' });
     if (!goal) return res.status(400).json({ error: 'goal is required' });
-    if (!Array.isArray(boundary) || !boundary.length) return res.status(400).json({ error: 'boundary is required' });
+    if (boundary && (!Array.isArray(boundary) || boundary.length < 3)) return res.status(400).json({ error: 'boundary must be a polygon' });
 
     const project = await createProject(orgId, req.body || {});
     return res.status(201).json(project);

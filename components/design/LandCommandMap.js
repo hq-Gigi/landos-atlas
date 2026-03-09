@@ -180,6 +180,19 @@ export default function LandCommandMap({ className = '', boundary = [], scenario
   }, [boundary]);
 
   const boundaryGeoJson = useMemo(() => toGeoJson(localBoundary), [localBoundary]);
+  const scenarioFeatures = useMemo(() => {
+    const roads = (scenario?.layout?.roadLines || []).map((line, index) => ({
+      type: 'Feature',
+      properties: { kind: 'road', id: `road-${index}` },
+      geometry: { type: 'LineString', coordinates: line }
+    }));
+    const plots = (scenario?.layout?.plotGrid || []).map((plot, index) => ({
+      type: 'Feature',
+      properties: { kind: 'plot', id: `plot-${index}` },
+      geometry: { type: 'Polygon', coordinates: [plot] }
+    }));
+    return [...roads, ...plots];
+  }, [scenario]);
 
   useEffect(() => {
     onParcelMetricsChange?.(calculateMetrics(localBoundary));
@@ -218,6 +231,12 @@ export default function LandCommandMap({ className = '', boundary = [], scenario
         map.addLayer({ id: 'candidate-fill', type: 'fill', source: 'candidate-parcels', paint: { 'fill-color': '#98f5a9', 'fill-opacity': 0.22 } });
         map.addLayer({ id: 'candidate-outline', type: 'line', source: 'candidate-parcels', paint: { 'line-color': '#71d885', 'line-width': 1.6 } });
 
+        map.addSource('scenario-roads', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+        map.addLayer({ id: 'scenario-roads', type: 'line', source: 'scenario-roads', paint: { 'line-color': '#f8d26a', 'line-width': 2.4, 'line-opacity': 0.9 } });
+
+        map.addSource('scenario-plots', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+        map.addLayer({ id: 'scenario-plots', type: 'line', source: 'scenario-plots', paint: { 'line-color': '#94b8ff', 'line-width': 1.1, 'line-opacity': 0.75 } });
+
         if (mapboxToken) {
           map.addSource('mapbox-dem', { type: 'raster-dem', url: 'mapbox://mapbox.mapbox-terrain-dem-v1', tileSize: 512, maxzoom: 14 });
           map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.1 });
@@ -246,6 +265,8 @@ export default function LandCommandMap({ className = '', boundary = [], scenario
     if (!map || !map.getSource('parcel-boundary')) return;
     map.getSource('parcel-boundary').setData(boundaryGeoJson || { type: 'FeatureCollection', features: [] });
     map.getSource('candidate-parcels')?.setData(candidateGeoJson);
+    map.getSource('scenario-roads')?.setData({ type: 'FeatureCollection', features: scenarioFeatures.filter((f) => f.properties.kind === 'road') });
+    map.getSource('scenario-plots')?.setData({ type: 'FeatureCollection', features: scenarioFeatures.filter((f) => f.properties.kind === 'plot') });
 
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
@@ -275,7 +296,7 @@ export default function LandCommandMap({ className = '', boundary = [], scenario
 
     const bbox = getBBox(localBoundary);
     if (bbox) map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: 60, duration: 700 });
-  }, [boundaryGeoJson, candidateGeoJson, localBoundary, onBoundaryChange, projects, showProjectMarkers]);
+  }, [boundaryGeoJson, candidateGeoJson, localBoundary, onBoundaryChange, projects, scenarioFeatures, showProjectMarkers]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -284,6 +305,7 @@ export default function LandCommandMap({ className = '', boundary = [], scenario
     if (mapboxToken && map.getTerrain()) map.setTerrain({ source: 'mapbox-dem', exaggeration: layersEnabled.terrain ? 1.2 : 1.0 });
     ['parcel-fill', 'parcel-outline'].forEach((id) => map.getLayer(id) && map.setLayoutProperty(id, 'visibility', layersEnabled.parcels ? 'visible' : 'none'));
     ['candidate-fill', 'candidate-outline'].forEach((id) => map.getLayer(id) && map.setLayoutProperty(id, 'visibility', layersEnabled.candidates ? 'visible' : 'none'));
+    ['scenario-roads', 'scenario-plots'].forEach((id) => map.getLayer(id) && map.setLayoutProperty(id, 'visibility', layersEnabled.scenarios ? 'visible' : 'none'));
   }, [layersEnabled, mapboxToken]);
 
   const runSearch = async (event) => {
