@@ -233,33 +233,61 @@ export default function ProjectWorkspace({ projectId, section }) {
         ))}
       </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
+      <div className="mt-6 grid gap-4 xl:grid-cols-[280px_minmax(0,1fr)_320px]">
+        <aside className="space-y-3">
+          <div className="glass-panel p-4">
+            <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/70">Project controls</p>
+            <p className="mt-2 text-sm text-[#b5cde6]">Projects, parcel layers, generator objectives, and feasibility assumptions feed the central land engine.</p>
+            <div className="mt-3 space-y-2 text-sm text-[#d5e8fa]">
+              <p>• Parcel layers active: {state?.project?.boundaries?.length || 0}</p>
+              <p>• Scenario objective: {(state?.project?.landProfile?.assumptions || {}).objective || 'BALANCED'}</p>
+              <p>• Assumption profile: {state?.project?.landProfile?.zoning || 'Not set'}</p>
+            </div>
+          </div>
+          <div className="glass-panel p-4">
+            <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/70">Boundary geometry</p>
+            <p className="mt-2 text-sm text-[#b5cde6]">Area {Math.round(boundaryMetrics?.areaSqm || 0).toLocaleString()} sqm · Perimeter {Math.round(boundaryMetrics?.perimeterM || 0).toLocaleString()} m · Frontage {Math.round(boundaryMetrics?.frontageM || 0).toLocaleString()} m</p>
+          </div>
+        </aside>
+
         <div className="glass-panel overflow-hidden">
           <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 text-xs uppercase tracking-[0.18em] text-cyan-100/80">
-            <span>Live satellite + parcel canvas</span>
-            <span>draw · zone · optimize</span>
+            <span>Land engine map workspace</span>
+            <span>search · draw · edit · overlay</span>
           </div>
-          <LandCommandMap className="h-[360px] w-full lg:h-[460px]" />
+          <LandCommandMap
+            className="h-[420px] w-full lg:h-[560px]"
+            boundary={state?.boundary || []}
+            onBoundaryChange={(next) => setBoundaryInput(boundaryToInput(next))}
+          />
         </div>
-        <div className="space-y-3">
+
+        <aside className="space-y-3">
           <div className="glass-panel p-4">
-            <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/75">Boundary geometry</p>
-            <p className="mt-2 text-sm text-[#b5cde6]">Area {Math.round(boundaryMetrics?.areaSqm || 0).toLocaleString()} sqm · Perimeter {Math.round(boundaryMetrics?.perimeterM || 0).toLocaleString()} m · Frontage {Math.round(boundaryMetrics?.frontageM || 0).toLocaleString()} m</p>
-            <BoundaryPreview boundary={state?.boundary} />
+            <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/70">Decision intelligence</p>
+            <p className="mt-2 text-sm text-[#b5cde6]">Plot count {(topScenario?.layout?.plotCount || 0).toLocaleString()} · Yield {(topScenario?.metrics?.yieldScore || 0).toLocaleString()}</p>
+            <p className="mt-1 text-sm text-[#b5cde6]">Revenue {(topScenario?.metrics?.revenue || 0).toLocaleString()} · Cost {(topScenario?.metrics?.cost || 0).toLocaleString()}</p>
+            <p className="mt-1 text-sm text-[#b5cde6]">Margin {topScenario?.metrics?.margin || '0%'} · Optimization {topScenario?.optimizationScore || 0}</p>
+            <p className="mt-3 text-xs text-cyan-100/80">AI recommendation: {topScenario ? `Prioritize ${topScenario.name} for highest ranked feasibility envelope.` : 'Generate scenarios to receive recommendation.'}</p>
           </div>
-          {topScenario && (
-            <div className="rounded-2xl border border-cyan-200/20 bg-cyan-400/5 p-5">
-              <p className="text-xs uppercase tracking-[0.22em] text-cyan-100/75">Top development layout</p>
-              <p className="mt-2 text-xl font-semibold">{topScenario.name}</p>
-              <p className="mt-1 text-sm text-[#cce3f9]">Optimization {topScenario.optimizationScore} · Margin {topScenario.metrics.margin} · Feasibility {topScenario.feasibility}</p>
+          <BoundaryPreview boundary={state?.boundary} />
+        </aside>
+      </div>
+
+      <div className="mt-4 glass-panel p-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-100/80">Scenario comparison engine</h3>
+          <span className="text-xs text-[#9abbd8]">Scenario A · B · C</span>
+        </div>
+        <div className="mt-3 grid gap-3 md:grid-cols-3">
+          {(state?.scenarios || []).slice(0, 3).map((scenario, index) => (
+            <div key={scenario.id} className="rounded-xl border border-cyan-200/20 bg-[#061824] p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/70">Scenario {String.fromCharCode(65 + index)}</p>
+              <p className="mt-1 font-semibold">{scenario.name}</p>
+              <p className="mt-1 text-sm text-[#b5cde6]">Yield {scenario.metrics.yieldScore} · Revenue {scenario.metrics.revenue.toLocaleString()}</p>
+              <p className="text-sm text-[#b5cde6]">Cost {scenario.metrics.cost.toLocaleString()} · Margin {scenario.metrics.margin}</p>
             </div>
-          )}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="glass-panel p-4"><p className="text-xs text-[#93b6d7]">Scenario options</p><p className="mt-1 text-2xl font-semibold text-cyan-100">{state?.scenarios?.length || 0}</p></div>
-            <div className="glass-panel p-4"><p className="text-xs text-[#93b6d7]">Feasibility reports</p><p className="mt-1 text-2xl font-semibold text-cyan-100">{feasibilityCount}</p></div>
-            <div className="glass-panel p-4"><p className="text-xs text-[#93b6d7]">Collaboration items</p><p className="mt-1 text-2xl font-semibold text-cyan-100">{(state?.project?.comments?.length || 0) + (state?.project?.tasks?.length || 0)}</p></div>
-            <div className="glass-panel p-4"><p className="text-xs text-[#93b6d7]">Exports generated</p><p className="mt-1 text-2xl font-semibold text-cyan-100">{exportCount}</p></div>
-          </div>
+          ))}
         </div>
       </div>
 
