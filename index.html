@@ -1,27 +1,97 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>LandOS Atlas by Gigi Labs</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; line-height:1.6; }
-        h1, h2 { color: #333; }
-        ul { list-style-type: disc; margin-left: 20px; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LandOS Atlas by Gigi Labs</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; line-height: 1.6; }
+    header { background: #333; color: #fff; padding: 1rem 2rem; }
+    nav a { color: #fff; margin-right: 1rem; text-decoration: none; }
+    section { padding: 2rem; }
+    h1, h2 { color: #333; }
+    ul { list-style: disc; margin-left: 2rem; }
+    .documents li { margin-bottom: 0.5rem; }
+    footer { background: #f4f4f4; text-align: center; padding: 1rem; margin-top: 2rem; }
+    form { max-width: 400px; margin-top: 1rem; }
+    form input, form textarea { width: 100%; padding: 0.5rem; margin-bottom: 0.5rem; }
+    form button { padding: 0.5rem 1rem; background: #333; color: #fff; border: none; cursor: pointer; }
+    .message { margin-top: 1rem; color: green; }
+  </style>
 </head>
 <body>
-    <h1>LandOS Atlas</h1>
-    <p>LandOS Atlas is a planetary intelligence and execution operating system that turns land anywhere on Earth into structured data, optimized planning scenarios, financial intelligence and collaborative workflows. Investors, planners, builders, and institutions can analyze, simulate scenarios, finance and execute projects, managing the full lifecycle of land-based development at global scale.</p>
+  <header>
+    <h1>LandOS Atlas Platform</h1>
+    <nav>
+      <a href="#home">Home</a>
+      <a href="#documents">Documents</a>
+      <a href="#about">About</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </header>
 
-    <h2>Documentation</h2>
-    <p>The repository includes the following documents:</p>
-    <ul>
-        <li><strong>Land Os Gigi Labs Master Blueprint (2).pdf</strong> – Final world-system blueprint.</li>
-        <li><strong>Land Os Atlas Cinematic Experience System.pdf</strong> – Cinematic experience system details.</li>
-        <li><strong>Land Os Atlas Cinematic Implementation Pack.pdf</strong> – Implementation pack for cinematic assets.</li>
-        <li><strong>Land Os Atlas Operational Build Pack.pdf</strong> – Operational build guidelines.</li>
-        <li><strong>Land Os Atlas Continuation From 28 (1).pdf</strong> – Continuation materials.</li>
+  <section id="home">
+    <h2>Welcome</h2>
+    <p>LandOS Atlas is a planetary intelligence and execution operating system that transforms land anywhere on Earth into structured data, optimized planning scenarios, and actionable intelligence. This platform provides the foundation for development, investment, and governance of land assets.</p>
+  </section>
+
+  <section id="documents">
+    <h2>Blueprint & Documentation</h2>
+    <p>Explore the key documents that outline the vision, implementation, and operational guidance for LandOS:</p>
+    <ul class="documents">
+      <li><a href="Land%20Os%20Gigi%20Labs%20Master%20Blueprint%20(2).pdf" target="_blank">Land OS Gigi Labs Master Blueprint</a> – Final world‑system blueprint.</li>
+      <li><a href="Land%20Os%20Atlas%20Cinematic%20Experience%20System.pdf" target="_blank">Land OS Atlas Cinematic Experience System</a> – Cinematic experience details.</li>
+      <li><a href="Land%20Os%20Atlas%20Cinematic%20Implementation%20Pack.pdf" target="_blank">Land OS Atlas Cinematic Implementation Pack</a> – Implementation pack for cinematic assets.</li>
+      <li><a href="Land%20Os%20Atlas%20Operational%20Build%20Pack.pdf" target="_blank">Land OS Atlas Operational Build Pack</a> – Operational build guidelines.</li>
+      <li><a href="Land%20Os%20Atlas%20Continuation%20From%2028%20(1).pdf" target="_blank">Land OS Atlas Continuation From 28</a> – Continuation materials.</li>
     </ul>
-    <p>More details and code modules will be added in subsequent iterations.</p>
+  </section>
+
+  <section id="about">
+    <h2>About LandOS</h2>
+    <p>LandOS is developed by Gigi Labs to enable a comprehensive approach to land management, combining geospatial intelligence, simulation, and collaborative planning. The Atlas platform integrates data from multiple sources and provides tools for analyzing terrain, infrastructure, and environmental factors to inform decisions and investments.</p>
+  </section>
+
+  <section id="contact">
+    <h2>Contact Us</h2>
+    <p>Have questions or feedback? Send us a message.</p>
+    <form id="contactForm">
+      <input type="text" id="name" placeholder="Your name" required>
+      <input type="email" id="email" placeholder="Your email" required>
+      <textarea id="message" rows="4" placeholder="Your message" required></textarea>
+      <button type="submit">Send</button>
+    </form>
+    <div class="message" id="responseMessage" style="display:none;">Thank you! We have received your message.</div>
+  </section>
+
+  <footer>
+    <p>© 2026 LandOS Atlas by Gigi Labs. All rights reserved.</p>
+  </footer>
+
+  <script>
+    // Handle contact form submission
+    document.getElementById('contactForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const message = document.getElementById('message').value;
+
+      try {
+        const response = await fetch('/api/contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, message })
+        });
+        if (response.ok) {
+          document.getElementById('responseMessage').style.display = 'block';
+          document.getElementById('contactForm').reset();
+        } else {
+          alert('There was an error sending your message.');
+        }
+      } catch (err) {
+        alert('Unable to submit message.');
+      }
+    });
+  </script>
 </body>
 </html>
