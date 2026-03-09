@@ -1,11 +1,5 @@
-import Head from 'next/head';
-import NavBar from '../../components/NavBar';
+import AudiencePage from '../../components/design/AudiencePage';
 
-export default function Page(){
-  return (
-    <>
-      <Head><title>LandOS Atlas for Investors</title></Head>
-      <main className="min-h-screen bg-slate-950 text-white"><NavBar /><section className="mx-auto max-w-5xl px-6 py-20"><h1 className="text-4xl font-bold">For Investors</h1><p className="mt-4 text-slate-300">Evaluate project upside, downside, and execution risk with transparent assumptions, ranked scenarios, and AI-generated investment memos.</p></section></main>
-    </>
-  );
+export default function Page() {
+  return <AudiencePage title="For Investors" copy="Understand opportunity quality with visibility into scenario upside, downside, and feasibility confidence." bullets={[{ title: 'Portfolio risk mapping', copy: 'Compare projects by margin confidence, liquidity profile, and timeline risk.' }, { title: 'Capital intelligence', copy: 'Inspect capex structures and sensitivity ranges before commitments.' }, { title: 'Boardroom narratives', copy: 'Generate structured memos from auditable model outputs and recommendations.' }, { title: 'Execution confidence', copy: 'Track progress from parcel review through scenario implementation and returns.' }]} />;
 }

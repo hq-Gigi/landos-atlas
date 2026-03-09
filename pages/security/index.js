@@ -1,6 +1,26 @@
 import Head from 'next/head';
-import NavBar from '../../components/NavBar';
+import PageShell from '../../components/design/PageShell';
+import { MotionCard, Reveal, StaggerGrid } from '../../components/design/MotionSystem';
+
+const controls = ['Token-based auth sessions', 'Scoped organization access', 'Payment verification audit trail', 'Project activity records and provenance', 'Operational API health and monitoring'];
 
 export default function SecurityPage() {
-  return <><Head><title>LandOS Atlas Security</title></Head><main className="min-h-screen bg-slate-950 text-white"><NavBar /><section className="mx-auto max-w-5xl px-6 py-20"><h1 className="text-4xl font-bold">Security & Trust</h1><ul className="mt-6 space-y-2 text-slate-300"><li>• Server-side key management for AI and payment providers.</li><li>• Verified Paystack webhooks before unlock state changes.</li><li>• Role-based project access enforcement for all protected APIs.</li><li>• Persisted activity logs for collaborative auditability.</li></ul></section></main></>;
+  return (
+    <>
+      <Head><title>Security | LandOS Atlas</title></Head>
+      <PageShell>
+        <section className="mx-auto max-w-5xl px-6 py-20">
+          <Reveal>
+            <p className="eyebrow">ENTERPRISE TRUST LAYER</p>
+            <h1 className="mt-4 text-5xl font-semibold">Security built for serious project intelligence operations</h1>
+          </Reveal>
+          <StaggerGrid className="mt-10 grid gap-4">
+            {controls.map((control) => (
+              <MotionCard key={control} className="p-5 text-lg">✓ {control}</MotionCard>
+            ))}
+          </StaggerGrid>
+        </section>
+      </PageShell>
+    </>
+  );
 }
