@@ -37,12 +37,24 @@ function parseBoundaryInput(raw) {
     .map((line) => line.trim())
     .filter(Boolean)
     .map((line) => line.split(',').map((v) => Number(v.trim())))
-    .filter((pair) => pair.length === 2 && Number.isFinite(pair[0]) && Number.isFinite(pair[1]));
+    .filter((pair) => pair.length === 2 && Number.isFinite(pair[0]) && Number.isFinite(pair[1]))
+    .map(([lng, lat]) => ({ lng, lat }));
 }
 
 function boundaryToInput(boundary) {
   if (!Array.isArray(boundary)) return '';
-  return boundary.map((pair) => `${pair[0]}, ${pair[1]}`).join('\n');
+  return boundary
+    .map((point) => {
+      if (Array.isArray(point)) return `${point[0]}, ${point[1]}`;
+      return `${point?.lng}, ${point?.lat}`;
+    })
+    .join('\n');
+}
+
+
+function normalizeBoundaryPoint(point) {
+  if (Array.isArray(point)) return { lng: Number(point[0]), lat: Number(point[1]) };
+  return { lng: Number(point?.lng), lat: Number(point?.lat) };
 }
 
 function BoundaryPreview({ boundary }) {
@@ -50,16 +62,17 @@ function BoundaryPreview({ boundary }) {
     return <p className="text-sm text-[#99b6d3]">No parcel boundary saved yet. Draw and save a boundary to enable geometry metrics and scenario generation.</p>;
   }
 
-  const xs = boundary.map((point) => point[0]);
-  const ys = boundary.map((point) => point[1]);
+  const normalized = boundary.map(normalizeBoundaryPoint);
+  const xs = normalized.map((point) => point.lng);
+  const ys = normalized.map((point) => point.lat);
   const minX = Math.min(...xs);
   const maxX = Math.max(...xs);
   const minY = Math.min(...ys);
   const maxY = Math.max(...ys);
   const spanX = maxX - minX || 1;
   const spanY = maxY - minY || 1;
-  const points = boundary
-    .map(([x, y]) => `${((x - minX) / spanX) * 280 + 20},${300 - (((y - minY) / spanY) * 240 + 30)}`)
+  const points = normalized
+    .map((point) => `${((point.lng - minX) / spanX) * 280 + 20},${300 - (((point.lat - minY) / spanY) * 240 + 30)}`)
     .join(' ');
 
   return (
@@ -71,10 +84,10 @@ function BoundaryPreview({ boundary }) {
       </defs>
       <rect x="0" y="0" width="320" height="320" fill="url(#grid)" />
       <polyline points={`${points} ${points.split(' ')[0]}`} fill="rgba(79,209,255,0.16)" stroke="#4FD1FF" strokeWidth="2.5" />
-      {boundary.map((point, idx) => {
-        const cx = ((point[0] - minX) / spanX) * 280 + 20;
-        const cy = 300 - (((point[1] - minY) / spanY) * 240 + 30);
-        return <circle key={`${point[0]}-${point[1]}-${idx}`} cx={cx} cy={cy} r="3.5" fill="#F4C542" />;
+      {normalized.map((point, idx) => {
+        const cx = ((point.lng - minX) / spanX) * 280 + 20;
+        const cy = 300 - (((point.lat - minY) / spanY) * 240 + 30);
+        return <circle key={`${point.lng}-${point.lat}-${idx}`} cx={cx} cy={cy} r="3.5" fill="#F4C542" />;
       })}
     </svg>
   );
@@ -152,7 +165,7 @@ export default function ProjectWorkspace({ projectId, section }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify({ zoning, assumptions, constraints: {} })
+        body: JSON.stringify({ zoning, assumptions: { ...assumptions, objective: assumptions.objective || state?.project?.objective || 'BALANCED', goal: assumptions.goal || state?.project?.goal || 'BALANCED' }, constraints: {}, strategy: { objective: assumptions.objective || state?.project?.objective || 'BALANCED', goal: assumptions.goal || state?.project?.goal || 'BALANCED' } })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Land profile save failed');
@@ -215,8 +228,8 @@ export default function ProjectWorkspace({ projectId, section }) {
       {!!error && <p className="mt-4 rounded-xl border border-rose-300/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">{error}</p>}
 
       <div className="mt-6 grid gap-3 rounded-2xl border border-cyan-300/25 bg-[#061523]/90 p-4 md:grid-cols-4">
-        <div><p className="text-[11px] uppercase tracking-[0.15em] text-cyan-100/70">Boundary area</p><p className="mt-1 text-xl font-semibold text-cyan-200">{Math.round(boundaryMetrics?.areaSqm || 0).toLocaleString()} sqm</p></div>
-        <div><p className="text-[11px] uppercase tracking-[0.15em] text-cyan-100/70">Frontage length</p><p className="mt-1 text-xl font-semibold text-cyan-200">{Math.round(boundaryMetrics?.frontageM || 0).toLocaleString()} m</p></div>
+        <div><p className="text-[11px] uppercase tracking-[0.15em] text-cyan-100/70">Boundary area</p><p className="mt-1 text-xl font-semibold text-cyan-200">{Math.round(boundaryMetrics?.area || 0).toLocaleString()} sqm</p></div>
+        <div><p className="text-[11px] uppercase tracking-[0.15em] text-cyan-100/70">Frontage length</p><p className="mt-1 text-xl font-semibold text-cyan-200">{Math.round(boundaryMetrics?.frontage || 0).toLocaleString()} m</p></div>
         <div><p className="text-[11px] uppercase tracking-[0.15em] text-cyan-100/70">Top scenario</p><p className="mt-1 text-xl font-semibold text-cyan-200">{topScenario?.name || 'N/A'}</p></div>
         <div><p className="text-[11px] uppercase tracking-[0.15em] text-cyan-100/70">Feasibility reports</p><p className="mt-1 text-xl font-semibold text-cyan-200">{feasibilityCount}</p></div>
       </div>
@@ -240,13 +253,13 @@ export default function ProjectWorkspace({ projectId, section }) {
             <p className="mt-2 text-sm text-[#b5cde6]">Projects, parcel layers, generator objectives, and feasibility assumptions feed the central land engine.</p>
             <div className="mt-3 space-y-2 text-sm text-[#d5e8fa]">
               <p>• Parcel layers active: {state?.project?.boundaries?.length || 0}</p>
-              <p>• Scenario objective: {(state?.project?.landProfile?.assumptions || {}).objective || 'BALANCED'}</p>
+              <p>• Scenario objective: {state?.project?.objective || 'BALANCED'}</p>
               <p>• Assumption profile: {state?.project?.landProfile?.zoning || 'Not set'}</p>
             </div>
           </div>
           <div className="glass-panel p-4">
             <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/70">Boundary geometry</p>
-            <p className="mt-2 text-sm text-[#b5cde6]">Area {Math.round(boundaryMetrics?.areaSqm || 0).toLocaleString()} sqm · Perimeter {Math.round(boundaryMetrics?.perimeterM || 0).toLocaleString()} m · Frontage {Math.round(boundaryMetrics?.frontageM || 0).toLocaleString()} m</p>
+            <p className="mt-2 text-sm text-[#b5cde6]">Area {Math.round(boundaryMetrics?.area || 0).toLocaleString()} sqm · Perimeter {Math.round(boundaryMetrics?.perimeter || 0).toLocaleString()} m · Frontage {Math.round(boundaryMetrics?.frontage || 0).toLocaleString()} m</p>
           </div>
         </aside>
 
@@ -258,14 +271,17 @@ export default function ProjectWorkspace({ projectId, section }) {
           <LandCommandMap
             className="h-[420px] w-full lg:h-[560px]"
             boundary={state?.boundary || []}
-            onBoundaryChange={(next) => setBoundaryInput(boundaryToInput(next))}
+            onBoundaryChange={(next) => {
+              setBoundaryInput(boundaryToInput(next));
+              setState((current) => (current ? { ...current, boundary: next } : current));
+            }}
           />
         </div>
 
         <aside className="space-y-3">
           <div className="glass-panel p-4">
             <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/70">Decision intelligence</p>
-            <p className="mt-2 text-sm text-[#b5cde6]">Plot count {(topScenario?.layout?.plotCount || 0).toLocaleString()} · Yield {(topScenario?.metrics?.yieldScore || 0).toLocaleString()}</p>
+            <p className="mt-2 text-sm text-[#b5cde6]">Plot count {(topScenario?.layout?.parcelCount || 0).toLocaleString()} · Yield {(topScenario?.metrics?.yieldUnits || 0).toLocaleString()}</p>
             <p className="mt-1 text-sm text-[#b5cde6]">Revenue {(topScenario?.metrics?.revenue || 0).toLocaleString()} · Cost {(topScenario?.metrics?.cost || 0).toLocaleString()}</p>
             <p className="mt-1 text-sm text-[#b5cde6]">Margin {topScenario?.metrics?.margin || '0%'} · Optimization {topScenario?.optimizationScore || 0}</p>
             <p className="mt-3 text-xs text-cyan-100/80">AI recommendation: {topScenario ? `Prioritize ${topScenario.name} for highest ranked feasibility envelope.` : 'Generate scenarios to receive recommendation.'}</p>
@@ -284,7 +300,7 @@ export default function ProjectWorkspace({ projectId, section }) {
             <div key={scenario.id} className="rounded-xl border border-cyan-200/20 bg-[#061824] p-4">
               <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/70">Scenario {String.fromCharCode(65 + index)}</p>
               <p className="mt-1 font-semibold">{scenario.name}</p>
-              <p className="mt-1 text-sm text-[#b5cde6]">Yield {scenario.metrics.yieldScore} · Revenue {scenario.metrics.revenue.toLocaleString()}</p>
+              <p className="mt-1 text-sm text-[#b5cde6]">Yield {scenario.metrics.yieldUnits} · Revenue {scenario.metrics.revenue.toLocaleString()}</p>
               <p className="text-sm text-[#b5cde6]">Cost {scenario.metrics.cost.toLocaleString()} · Margin {scenario.metrics.margin}</p>
             </div>
           ))}
@@ -334,7 +350,7 @@ export default function ProjectWorkspace({ projectId, section }) {
           {(state?.scenarios || []).slice(0, 3).map((scenario) => (
             <div key={scenario.id} className="glass-panel p-4">
               <h3 className="font-semibold">{scenario.name}</h3>
-              <p className="mt-2 text-sm text-[#b5cde6]">{scenario.layout.plotCount} plots · frontage efficiency {scenario.layout.frontageEfficiency} · road efficiency {scenario.layout.roadNetwork.efficiency}</p>
+              <p className="mt-2 text-sm text-[#b5cde6]">{scenario.layout.parcelCount} plots · frontage efficiency {scenario.layout.frontageEfficiency} · road efficiency {scenario.layout.roadNetwork.efficiency}</p>
               <p className="mt-2 text-xs uppercase tracking-[0.16em] text-cyan-100/70">Revenue {scenario.metrics.revenue.toLocaleString()} · Cost {scenario.metrics.cost.toLocaleString()} · Margin {scenario.metrics.margin}</p>
             </div>
           ))}
