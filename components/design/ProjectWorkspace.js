@@ -396,7 +396,7 @@ export default function ProjectWorkspace({ projectId, section }) {
                 <select className="mt-1 w-full rounded-lg border border-white/15 bg-[#071523] px-2 py-2" value={generatorConfig.objective} onChange={(e) => setGeneratorConfig((prev) => ({ ...prev, objective: e.target.value }))}>
                   <option value="MAX_YIELD">MAX_YIELD</option>
                   <option value="BALANCED">BALANCED</option>
-                  <option value="PREMIUM_LAYOUT">PREMIUM_LAYOUT</option>
+                  <option value="PREMIUM">PREMIUM</option>
                   <option value="FAST_DEVELOPMENT">FAST_DEVELOPMENT</option>
                 </select>
               </label>

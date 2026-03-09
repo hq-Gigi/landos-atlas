@@ -4,7 +4,7 @@ import PageShell from '../../components/design/PageShell';
 import LandCommandMap from '../../components/design/LandCommandMap';
 import { fetchWithAuth } from '../../lib/clientAuth';
 
-const GOALS = ['MAXIMIZE_REVENUE', 'MAXIMIZE_MARGIN', 'BALANCED', 'PREMIUM_LAYOUT', 'FAST_DEVELOPMENT'];
+const GOALS = ['MAXIMIZE_REVENUE', 'MAXIMIZE_MARGIN', 'BALANCED', 'PREMIUM', 'FAST_DEVELOPMENT'];
 
 const ASSUMPTION_FIELDS = [
   ['landAcquisitionCost', 'Land acquisition cost'],

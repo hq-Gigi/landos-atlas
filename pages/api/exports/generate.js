@@ -5,7 +5,7 @@ import { enforceRateLimit, requireProjectAccess } from '../../../lib/apiGuard';
 import { getProjectState } from '../../../lib/platformStore';
 
 function buildScr(state) {
-  const lines = ['; LandOS Atlas SCR export', '; Includes parcel boundary + scenario road overlays'];
+  const lines = ['; LandOS Atlas SCR export', '; Includes parcel boundary, scenario road overlays, and plot polygons'];
   const boundary = state.boundary || [];
   if (boundary.length > 2) {
     lines.push('; Parcel boundary polyline');
@@ -18,9 +18,22 @@ function buildScr(state) {
   state.scenarios.forEach((s, idx) => {
     lines.push(`; Scenario ${idx + 1}: ${s.name}`);
     (s.layout?.roadLines || []).forEach((road) => {
+      if (!Array.isArray(road) || road.length < 2) return;
       lines.push('LINE');
       lines.push(`${road[0][0]},${road[0][1]}`);
       lines.push(`${road[1][0]},${road[1][1]}`);
+      lines.push('');
+    });
+
+    (s.layout?.plotGrid || []).forEach((plot) => {
+      if (!Array.isArray(plot) || plot.length < 3) return;
+      lines.push('PLINE');
+      plot.forEach((point) => {
+        if (!Array.isArray(point) || point.length < 2) return;
+        lines.push(`${point[0]},${point[1]}`);
+      });
+      const first = plot[0];
+      lines.push(`${first[0]},${first[1]}`);
       lines.push('');
     });
   });
@@ -31,14 +44,19 @@ function buildScr(state) {
 function buildPdfBytes(state) {
   const top = state.scenarios[0];
   const ai = state.project.recommendations?.[0]?.payload || {};
+  const metrics = state.boundaryMetrics || {};
   const lines = [
     'LandOS Atlas Development Report',
     `Project: ${state.project.name}`,
     `Objective: ${state.project.objective}`,
-    `Boundary Points: ${state.boundary.length}`,
+    `Boundary Points: ${state.boundary.length}` ,
+    `Boundary Area: ${Math.round(metrics.area || 0)} sqm`,
+    `Boundary Perimeter: ${Math.round(metrics.perimeter || 0)} m`,
+    `Boundary Frontage: ${Math.round(metrics.frontage || 0)} m`,
     `Top Scenario: ${top?.name || 'N/A'} | Units ${top?.metrics?.yieldUnits || 0} | ROI ${top?.metrics?.roi || 0}%`,
     `Feasibility: Revenue ${top?.metrics?.revenue || 0} | Cost ${top?.metrics?.cost || 0} | Margin ${top?.metrics?.margin || 0}`,
-    `AI Developer Summary: ${String(ai.developerSummary || 'Generate AI recommendations to include investor memo.').slice(0, 220)}`
+    `AI Developer Summary: ${String(ai.developerSummary || 'Generate AI recommendations to include investor memo.').slice(0, 220)}`,
+    `Investor Memo: ${String(ai.investorMemo || 'No investor memo available.').slice(0, 180)}`
   ];
   const text = lines.join(' | ').replace(/[()]/g, '');
   const stream = `BT /F1 11 Tf 40 760 Td (${text.slice(0, 1900)}) Tj ET`;
