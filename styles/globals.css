@@ -161,6 +161,42 @@ html, body {
   background: rgba(7, 13, 20, 0.72);
   border-radius: 0.9rem;
   padding: 1rem;
+  overflow: hidden;
+}
+
+.story-node::after {
+  content: '';
+  position: absolute;
+  inset: -40% -60%;
+  background: linear-gradient(120deg, transparent 30%, rgba(79,209,255,0.2), transparent 70%);
+  transform: translateX(-45%);
+  animation: nodeSweep 8s ease-in-out infinite;
+}
+
+.reason-grid .reason-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.reason-grid .reason-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 0% 0%, rgba(79,209,255,0.16), transparent 45%);
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+.reason-grid .reason-card::after {
+  content: '';
+  position: absolute;
+  left: -120%;
+  top: 0;
+  width: 90%;
+  height: 100%;
+  background: linear-gradient(110deg, transparent, rgba(255,255,255,0.14), transparent);
+  animation: reasonSweep 6.5s ease-in-out infinite;
+  animation-delay: var(--reason-delay, 0s);
 }
 
 .btn-primary, .btn-secondary {
@@ -242,4 +278,14 @@ html, body {
 @keyframes sweep {
   0%, 100% { transform: translateX(-100%); }
   45%, 65% { transform: translateX(100%); }
+}
+
+@keyframes reasonSweep {
+  0%, 82%, 100% { left: -120%; }
+  50% { left: 130%; }
+}
+
+@keyframes nodeSweep {
+  0%, 100% { transform: translateX(-45%); opacity: 0.2; }
+  55% { transform: translateX(45%); opacity: 0.65; }
 }

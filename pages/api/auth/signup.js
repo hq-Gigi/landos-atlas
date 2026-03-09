@@ -14,5 +14,5 @@ export default async function handler(req, res) {
   const token = await createSession(user.id);
   setSessionCookie(res, token);
 
-  return res.status(201).json({ user, organizationId: org.id, token });
+  return res.status(201).json({ user, organizationId: org.id });
 }

@@ -242,3 +242,13 @@ model LandAnalyticsSnapshot {
   totalListings      Int
   generatedAt        DateTime @default(now())
 }
+
+model ExperimentEvent {
+  id        String   @id @default(cuid())
+  experiment String
+  variant   String
+  eventType String
+  userId    String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+}

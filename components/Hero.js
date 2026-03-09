@@ -8,7 +8,22 @@ const stats = [
   ['6x', 'Faster board-ready feasibility cycles']
 ];
 
-export default function Hero() {
+const heroVariants = {
+  a: {
+    label: 'GIGI LABS FLAGSHIP',
+    title: 'The Planetary Operating System for Land Development Intelligence',
+    cta: 'Launch live workspace'
+  },
+  b: {
+    label: 'LIVE DECISION PLATFORM',
+    title: 'Plan land projects faster, align teams sooner, and deliver with less risk',
+    cta: 'Start with the live platform'
+  }
+};
+
+export default function Hero({ variant = 'a', onPrimaryCta }) {
+  const selected = heroVariants[variant] || heroVariants.a;
+
   return (
     <section className="hero-stage relative overflow-hidden px-4 pb-16 pt-16 sm:px-6 sm:pb-20 sm:pt-24">
       <div className="hero-noise" />
@@ -19,12 +34,12 @@ export default function Hero() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,#1397FF55,transparent_30%),radial-gradient(circle_at_80%_20%,#4FD1FF45,transparent_30%),radial-gradient(circle_at_50%_80%,#F4C54230,transparent_40%)]" />
       <div className="relative mx-auto grid max-w-7xl gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:gap-10">
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.85 }}>
-          <p className="eyebrow">GIGI LABS FLAGSHIP</p>
-          <h1 className="mt-5 text-3xl font-semibold leading-tight sm:text-5xl md:text-6xl lg:text-7xl">The Planetary Operating System for Land Development Intelligence</h1>
+          <p className="eyebrow">{selected.label}</p>
+          <h1 className="mt-5 text-3xl font-semibold leading-tight sm:text-5xl md:text-6xl lg:text-7xl">{selected.title}</h1>
           <p className="mt-5 max-w-2xl text-base text-[#b5cde6] sm:mt-6 sm:text-lg">{tagline}</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-            <Link href="/app" className="btn-primary w-full sm:w-auto">Launch live workspace</Link>
-            <Link href="/experience" className="btn-secondary w-full sm:w-auto">Watch cinematic reveal</Link>
+            <Link href="/app" className="btn-primary w-full sm:w-auto" onClick={onPrimaryCta}>{selected.cta}</Link>
+            <Link href="/experience" className="btn-secondary w-full sm:w-auto">See product walkthrough</Link>
           </div>
           <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {stats.map(([value, label]) => (

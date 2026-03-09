@@ -19,8 +19,8 @@ export default function PlatformPage(){
       <PageShell>
         <section className="mx-auto max-w-6xl px-6 py-20">
           <Reveal>
-            <p className="eyebrow">PLATFORM ARCHITECTURE</p>
-            <h1 className="mt-4 text-5xl font-semibold">Production-grade intelligence system from parcel to portfolio</h1>
+            <p className="eyebrow">PLATFORM OVERVIEW</p>
+            <h1 className="mt-4 text-5xl font-semibold">Enterprise operating system from parcel to portfolio</h1>
             <p className="mt-4 max-w-3xl text-[#b5cde6]">LandOS Atlas combines geospatial intelligence, deterministic optimization, financial feasibility, and collaboration into one operational system.</p>
           </Reveal>
           <StaggerGrid className="mt-10 grid gap-4 md:grid-cols-2">
@@ -32,7 +32,7 @@ export default function PlatformPage(){
             ))}
           </StaggerGrid>
           <Reveal className="mt-8 flex gap-3">
-            <Link href="/experience" className="btn-primary">Watch cinematic experience</Link>
+            <Link href="/experience" className="btn-primary">View platform walkthrough</Link>
             <Link href="/app" className="btn-secondary">Open application workspace</Link>
           </Reveal>
         </section>

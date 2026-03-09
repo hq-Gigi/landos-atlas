@@ -1,55 +1,88 @@
+import { requirePageAuth } from '../../../lib/ssrAuth';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
-import NavBar from '../../../components/NavBar';
-
-const seedBoundary = [
-  { lat: 6.437, lng: 3.562 },
-  { lat: 6.438, lng: 3.566 },
-  { lat: 6.434, lng: 3.568 },
-  { lat: 6.432, lng: 3.563 }
-];
+import PageShell from '../../../components/design/PageShell';
+import { fetchWithAuth, getClientOrgId } from '../../../lib/clientAuth';
 
 export default function NewProject() {
-  const [name, setName] = useState('Lekki Corridor Parcel');
+  const [name, setName] = useState('');
   const [objective, setObjective] = useState('BALANCED');
-  const [goal, setGoal] = useState('MAXIMIZE_MARGIN');
-  const [query, setQuery] = useState('Lekki, Lagos');
+  const [goal, setGoal] = useState('');
+  const [query, setQuery] = useState('');
   const [locations, setLocations] = useState([]);
-  const [boundaryText, setBoundaryText] = useState(JSON.stringify(seedBoundary, null, 2));
-  const [constructionCostPerUnit, setConstructionCostPerUnit] = useState('55000');
-  const [salePricePerUnit, setSalePricePerUnit] = useState('90000');
-  const [timelineBaseMonths, setTimelineBaseMonths] = useState('14');
+  const [boundaryText, setBoundaryText] = useState('[]');
+  const [constructionCostPerUnit, setConstructionCostPerUnit] = useState('');
+  const [salePricePerUnit, setSalePricePerUnit] = useState('');
+  const [timelineBaseMonths, setTimelineBaseMonths] = useState('');
+  const [error, setError] = useState('');
   const router = useRouter();
 
   async function searchLocation() {
+    if (!query.trim()) return;
     const res = await fetch(`/api/geo/search?q=${encodeURIComponent(query)}`);
     const data = await res.json();
     setLocations(Array.isArray(data) ? data : []);
   }
 
   async function createProject() {
-    const token = localStorage.getItem('atlas_token');
-    const orgId = localStorage.getItem('atlas_org');
-    const boundary = JSON.parse(boundaryText);
-    const res = await fetch('/api/projects', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({
-        orgId,
-        name,
-        objective,
-        goal,
-        boundary,
-        assumptions: {
-          constructionCostPerUnit: Number(constructionCostPerUnit),
-          salePricePerUnit: Number(salePricePerUnit),
-          timelineBaseMonths: Number(timelineBaseMonths)
-        }
-      })
-    });
-    const data = await res.json();
-    if (res.ok) router.push(`/app/projects/${data.id}`);
+    try {
+      setError('');
+      const orgId = getClientOrgId();
+      if (!orgId) throw new Error('Organization is missing. Sign in again.');
+      if (!name.trim()) throw new Error('Project name is required.');
+      if (!goal.trim()) throw new Error('Project goal is required.');
+      const boundary = JSON.parse(boundaryText);
+      if (!Array.isArray(boundary) || !boundary.length) throw new Error('Boundary must contain at least one coordinate.');
+
+      const data = await fetchWithAuth('/api/projects', {
+        method: 'POST',
+        body: JSON.stringify({
+          orgId,
+          name: name.trim(),
+          objective,
+          goal: goal.trim(),
+          boundary,
+          assumptions: {
+            constructionCostPerUnit: Number(constructionCostPerUnit || 0),
+            salePricePerUnit: Number(salePricePerUnit || 0),
+            timelineBaseMonths: Number(timelineBaseMonths || 0)
+          }
+        })
+      });
+      router.push(`/app/projects/${data.id}`);
+    } catch (err) {
+      setError(err.message);
+    }
   }
 
-  return <main className="min-h-screen bg-slate-950 text-white"><NavBar /><section className="mx-auto max-w-5xl px-6 py-12"><h1 className="text-3xl font-bold">Create Project</h1><p className="mt-2 text-slate-300">Search location, define boundary polygon, set objective + assumptions, and launch workspace.</p><input className="mt-4 w-full rounded bg-slate-900 px-3 py-2" value={name} onChange={(e)=>setName(e.target.value)} placeholder="Project name" /><div className="mt-3 grid gap-3 md:grid-cols-2"><select className="rounded bg-slate-900 px-3 py-2" value={objective} onChange={(e)=>setObjective(e.target.value)}><option>BALANCED</option><option>MAX_YIELD</option><option>PREMIUM</option><option>MAX_SIMPLICITY</option></select><input className="rounded bg-slate-900 px-3 py-2" value={goal} onChange={(e)=>setGoal(e.target.value)} /></div><div className="mt-3 flex gap-2"><input className="flex-1 rounded bg-slate-900 px-3 py-2" value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="Search location" /><button className="rounded border border-cyan-300 px-3" onClick={searchLocation}>Search</button></div><ul className="mt-2 space-y-1 text-sm text-slate-300">{locations.map((loc, idx)=><li key={`${loc.lat}-${idx}`}>{loc.label}</li>)}</ul><textarea className="mt-3 h-44 w-full rounded bg-slate-900 p-2 text-xs" value={boundaryText} onChange={(e)=>setBoundaryText(e.target.value)} /><div className="mt-3 grid gap-3 md:grid-cols-3"><input className="rounded bg-slate-900 px-3 py-2" value={constructionCostPerUnit} onChange={(e)=>setConstructionCostPerUnit(e.target.value)} placeholder="construction cost" /><input className="rounded bg-slate-900 px-3 py-2" value={salePricePerUnit} onChange={(e)=>setSalePricePerUnit(e.target.value)} placeholder="sale price" /><input className="rounded bg-slate-900 px-3 py-2" value={timelineBaseMonths} onChange={(e)=>setTimelineBaseMonths(e.target.value)} placeholder="timeline months" /></div><button className="mt-4 rounded bg-cyan-500 px-4 py-2" onClick={createProject}>Create and open workspace</button></section></main>;
+  return (
+    <PageShell>
+      <section className="mx-auto max-w-5xl px-6 py-12">
+        <h1 className="text-3xl font-bold">Create project</h1>
+        <p className="mt-2 text-[#b5cde6]">Define location, boundary, assumptions, and launch the project workspace.</p>
+        {error && <p className="mt-2 text-red-300">{error}</p>}
+
+        <input className="glass-panel mt-4 w-full px-3 py-2" value={name} onChange={(e) => setName(e.target.value)} placeholder="Project name" />
+        <div className="mt-3 grid gap-3 md:grid-cols-2">
+          <select className="glass-panel px-3 py-2" value={objective} onChange={(e) => setObjective(e.target.value)}><option>BALANCED</option><option>MAX_YIELD</option><option>PREMIUM</option><option>MAX_SIMPLICITY</option></select>
+          <input className="glass-panel px-3 py-2" value={goal} onChange={(e) => setGoal(e.target.value)} placeholder="Project goal" />
+        </div>
+        <div className="mt-3 flex gap-2">
+          <input className="glass-panel flex-1 px-3 py-2" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search location" />
+          <button className="btn-secondary" onClick={searchLocation}>Search</button>
+        </div>
+        <ul className="mt-2 space-y-1 text-sm text-[#b5cde6]">{locations.map((loc, idx) => <li key={`${loc.lat}-${idx}`}>{loc.label}</li>)}</ul>
+        <textarea className="glass-panel mt-3 h-44 w-full p-2 text-xs" value={boundaryText} onChange={(e) => setBoundaryText(e.target.value)} />
+        <div className="mt-3 grid gap-3 md:grid-cols-3">
+          <input className="glass-panel px-3 py-2" value={constructionCostPerUnit} onChange={(e) => setConstructionCostPerUnit(e.target.value)} placeholder="Construction cost per unit" />
+          <input className="glass-panel px-3 py-2" value={salePricePerUnit} onChange={(e) => setSalePricePerUnit(e.target.value)} placeholder="Sale price per unit" />
+          <input className="glass-panel px-3 py-2" value={timelineBaseMonths} onChange={(e) => setTimelineBaseMonths(e.target.value)} placeholder="Timeline (months)" />
+        </div>
+        <button className="btn-primary mt-4" onClick={createProject}>Create and open workspace</button>
+      </section>
+    </PageShell>
+  );
 }
+
+
+export const getServerSideProps = requirePageAuth();

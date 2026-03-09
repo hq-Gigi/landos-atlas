@@ -27,12 +27,24 @@ export default function NavBar() {
   }, [router.events]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const refresh = () => setSignedIn(Boolean(localStorage.getItem('atlas_token')));
+    let mounted = true;
+    const refresh = async () => {
+      try {
+        const res = await fetch('/api/auth/me', { credentials: 'same-origin' });
+        if (!mounted) return;
+        setSignedIn(res.ok);
+      } catch {
+        if (!mounted) return;
+        setSignedIn(false);
+      }
+    };
     refresh();
-    window.addEventListener('storage', refresh);
-    return () => window.removeEventListener('storage', refresh);
-  }, []);
+    window.addEventListener('focus', refresh);
+    return () => {
+      mounted = false;
+      window.removeEventListener('focus', refresh);
+    };
+  }, [router.pathname]);
 
   const authLinks = useMemo(() => (signedIn
     ? [['Workspace', '/app'], ['Logout', '/logout']]
