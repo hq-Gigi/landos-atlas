@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
-import NavBar from '../../components/NavBar';
+import PageShell from '../../components/design/PageShell';
 
 export default function AppHome() {
   const [email, setEmail] = useState('demo@gigilabs.com');
@@ -17,24 +17,23 @@ export default function AppHome() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
-      <NavBar />
+    <PageShell>
       <section className="mx-auto max-w-6xl px-6 py-12">
-        <h1 className="text-3xl font-bold">Application Workspace</h1>
-        <p className="mt-2 text-slate-300">Authenticate to access persisted projects, collaboration, reports, billing, and marketplace records.</p>
-        <div className="mt-6 grid gap-3 rounded-xl border border-white/10 p-4 md:grid-cols-4">
-          <input className="rounded bg-slate-900 px-3 py-2" value={email} onChange={(e) => setEmail(e.target.value)} />
-          <input className="rounded bg-slate-900 px-3 py-2" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-          <button className="rounded bg-cyan-500 px-3" onClick={() => login('/api/auth/login')}>Login</button>
-          <button className="rounded border border-cyan-400 px-3" onClick={() => login('/api/auth/signup')}>Signup</button>
+        <h1 className="text-4xl font-semibold">Application Workspace</h1>
+        <p className="mt-2 text-[#b5cde6]">Authenticate to access persisted projects, collaboration, reports, billing, and marketplace records.</p>
+        <div className="glass-panel mt-6 grid gap-3 p-4 md:grid-cols-4">
+          <input className="rounded-lg bg-[#09111c] px-3 py-2" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <input className="rounded-lg bg-[#09111c] px-3 py-2" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <button className="btn-primary" onClick={() => login('/api/auth/login')}>Login</button>
+          <button className="btn-secondary" onClick={() => login('/api/auth/signup')}>Signup</button>
         </div>
         {status && <p className="mt-3 text-sm text-cyan-200">{status}</p>}
         <div className="mt-6 grid gap-3 md:grid-cols-3">
           {['portfolio', 'projects/new', 'marketplace', 'billing', 'investment', 'datasets'].map((route) => (
-            <Link key={route} className="rounded-lg border border-white/10 p-4" href={`/app/${route}`}>/app/{route}</Link>
+            <Link key={route} className="glass-panel p-4 transition hover:-translate-y-1" href={`/app/${route}`}>/app/{route}</Link>
           ))}
         </div>
       </section>
-    </main>
+    </PageShell>
   );
 }

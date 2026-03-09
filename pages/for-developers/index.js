@@ -1,11 +1,5 @@
-import Head from 'next/head';
-import NavBar from '../../components/NavBar';
+import AudiencePage from '../../components/design/AudiencePage';
 
-export default function Page(){
-  return (
-    <>
-      <Head><title>LandOS Atlas for Developers</title></Head>
-      <main className="min-h-screen bg-slate-950 text-white"><NavBar /><section className="mx-auto max-w-5xl px-6 py-20"><h1 className="text-4xl font-bold">For Developers</h1><p className="mt-4 text-slate-300">Run land studies, compare deterministic scenarios, manage feasibility assumptions, and generate execution-ready reports without fragmented tooling.</p></section></main>
-    </>
-  );
+export default function Page() {
+  return <AudiencePage title="For Developers" copy="Deliver deterministic land intelligence at development speed with scenario APIs, optimization controls, and export pipelines." bullets={[{ title: 'Parcel APIs', copy: 'Search, validate, and enrich parcel geometry with persistent intelligence primitives.' }, { title: 'Scenario pipelines', copy: 'Run repeatable road/plot layouts and optimization sweeps through governed workflows.' }, { title: 'Automation-ready exports', copy: 'Generate board-ready decks, reports, and project packets from production data.' }, { title: 'Team operations', copy: 'Coordinate comments, review states, and model updates across technical teams.' }]} />;
 }
