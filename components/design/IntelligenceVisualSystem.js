@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Float, Line, OrbitControls, Sphere, Stars, Text } from '@react-three/drei';
+import { Float } from '@react-three/drei/core/Float';
+import { Line } from '@react-three/drei/core/Line';
+import { OrbitControls } from '@react-three/drei/core/OrbitControls';
+import { Stars } from '@react-three/drei/core/Stars';
+import { Text } from '@react-three/drei/core/Text';
 import { motion } from 'framer-motion';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
@@ -124,9 +128,10 @@ function CollaborationGraph() {
       {nodes.map((node) => (
         <Float key={node.id} speed={2} floatIntensity={0.8}>
           <group position={node.pos}>
-            <Sphere args={[0.16, 18, 18]}>
+            <mesh>
+              <sphereGeometry args={[0.16, 18, 18]} />
               <meshStandardMaterial color={node.color} emissive={node.color} emissiveIntensity={0.2} />
-            </Sphere>
+            </mesh>
             <Text position={[0, 0.28, 0]} fontSize={0.09} color="#dff5ff" anchorX="center" anchorY="middle">
               {node.id}
             </Text>
@@ -148,9 +153,10 @@ function PlanetarySignals() {
 
   return (
     <group>
-      <Sphere args={[1.1, 40, 40]}>
+      <mesh>
+        <sphereGeometry args={[1.1, 40, 40]} />
         <meshStandardMaterial color="#0f2b43" metalness={0.2} roughness={0.65} wireframe />
-      </Sphere>
+      </mesh>
       {points.map((point, idx) => (
         <mesh key={idx} position={point.map((v) => v * 1.1)}>
           <sphereGeometry args={[0.04, 12, 12]} />
