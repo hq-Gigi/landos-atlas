@@ -49,3 +49,9 @@ npm run dev
 - Configure `PAYSTACK_SECRET_KEY` and route webhook to `/api/billing/webhook`.
 - Serve `public/exports` via app/CDN storage strategy.
 - Run `npm run build` in deployment pipeline.
+
+
+## Auth contract note
+- Session auth now relies on HttpOnly cookie (`atlas_session`) for API authorization.
+- Client code should avoid bearer token storage for session credentials.
+- Organization context is stored client-side as `atlas_org` only for org-scoped project listing requests.

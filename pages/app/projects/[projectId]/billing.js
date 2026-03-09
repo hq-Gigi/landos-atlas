@@ -1,14 +1,26 @@
 import { useState } from 'react';
-import { useRouter } from 'next/router';
-import NavBar from '../../../../components/NavBar';
+import PageShell from '../../../../components/design/PageShell';
+import { fetchWithAuth } from '../../../../lib/clientAuth';
+import { requirePageAuth } from '../../../../lib/ssrAuth';
 
-export default function ProjectBillingPage(){
-  const { query } = useRouter();
+export default function ProjectBillingPage({ projectId }) {
   const [response, setResponse] = useState(null);
-  async function init(){
-    const token = localStorage.getItem('atlas_token');
-    const r = await fetch('/api/billing/initialize', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ projectId: query.projectId, amount: 50000, callbackUrl: window.location.href }) });
-    setResponse(await r.json());
+  const [error, setError] = useState('');
+
+  async function init() {
+    try {
+      const data = await fetchWithAuth('/api/billing/initialize', {
+        method: 'POST',
+        body: JSON.stringify({ projectId, amount: 50000, callbackUrl: typeof window !== 'undefined' ? window.location.href : '' })
+      });
+      setResponse(data);
+      setError('');
+    } catch (err) {
+      setError(err.message);
+    }
   }
-  return <main className="min-h-screen bg-slate-950 text-white"><NavBar /><section className="mx-auto max-w-4xl px-6 py-12"><h1 className="text-3xl font-bold">Project Billing</h1><button className="mt-4 rounded bg-cyan-500 px-3 py-2" onClick={init}>Initialize payment</button>{response && <pre className="mt-4 rounded bg-slate-900 p-3 text-xs">{JSON.stringify(response,null,2)}</pre>}</section></main>;
+
+  return <PageShell><section className="mx-auto max-w-4xl px-6 py-12"><h1 className="text-3xl font-bold">Project billing</h1><button className="btn-primary mt-4" onClick={init}>Initialize payment</button>{error && <p className="mt-3 text-red-300">{error}</p>}{response && <pre className="glass-panel mt-4 p-3 text-xs">{JSON.stringify(response, null, 2)}</pre>}</section></PageShell>;
 }
+
+export const getServerSideProps = requirePageAuth(({ params }) => ({ projectId: params.projectId }));

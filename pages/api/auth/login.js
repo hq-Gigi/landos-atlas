@@ -1,5 +1,5 @@
 import { createSession, setSessionCookie } from '../../../lib/auth';
-import { loginUser } from '../../../lib/platformStore';
+import { listOrganizationsForUser, loginUser } from '../../../lib/platformStore';
 import { validateAuthPayload } from '../../../lib/validation';
 
 export default async function handler(req, res) {
@@ -13,5 +13,10 @@ export default async function handler(req, res) {
 
   const token = await createSession(user.id);
   setSessionCookie(res, token);
-  return res.status(200).json({ token, user });
+
+  const organizations = await listOrganizationsForUser(user.id);
+  return res.status(200).json({
+    user,
+    organizationId: organizations[0]?.id || null
+  });
 }

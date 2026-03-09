@@ -10,7 +10,7 @@ export default function AudiencePage({ title, copy, bullets }) {
       <PageShell>
         <section className="mx-auto max-w-6xl px-6 py-20">
           <Reveal>
-            <p className="eyebrow">GIGI LABS INTELLIGENCE SURFACE</p>
+            <p className="eyebrow">LANDOS ATLAS PLATFORM</p>
             <h1 className="mt-4 text-5xl font-semibold leading-tight">{title}</h1>
             <p className="mt-5 max-w-3xl text-lg text-[#b5cde6]">{copy}</p>
           </Reveal>
@@ -23,7 +23,7 @@ export default function AudiencePage({ title, copy, bullets }) {
             ))}
           </StaggerGrid>
           <Reveal className="mt-10 flex gap-4">
-            <Link href="/experience" className="btn-primary">Explore cinematic product tour</Link>
+            <Link href="/experience" className="btn-primary">See product walkthrough</Link>
             <Link href="/app" className="btn-secondary">Enter live platform</Link>
           </Reveal>
         </section>

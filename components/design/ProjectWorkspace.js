@@ -11,7 +11,7 @@ export default function ProjectWorkspace({ projectId, section }) {
 
   useEffect(() => {
     if (!projectId) return;
-    fetch(`/api/projects/${projectId}/state`, { headers: { Authorization: `Bearer ${localStorage.getItem('atlas_token') || ''}` } })
+    fetch(`/api/projects/${projectId}/state`, { credentials: 'same-origin' })
       .then((r) => r.json())
       .then(setState)
       .catch(() => setState(null));
@@ -24,9 +24,9 @@ export default function ProjectWorkspace({ projectId, section }) {
 
   return (
     <section className="mx-auto max-w-7xl px-6 py-10">
-      <p className="eyebrow">Atlas command surface</p>
-      <h1 className="mt-4 text-3xl font-semibold lg:text-5xl">{state?.project?.name || `Project ${projectId}`} · Intelligence Theater</h1>
-      <p className="mt-3 max-w-4xl text-[#b5cde6]">A premium enterprise command interface engineered to communicate scale, authority, intelligence, and inevitability across land strategy decisions.</p>
+      <p className="eyebrow">Project command center</p>
+      <h1 className="mt-4 text-3xl font-semibold lg:text-5xl">{state?.project?.name || `Project ${projectId}`} · Project intelligence</h1>
+      <p className="mt-3 max-w-4xl text-[#b5cde6]">A unified workspace for scenario analysis, feasibility, collaboration, and reporting.</p>
 
       <div className="mt-6 flex flex-wrap gap-2">
         <Link className={`glass-panel px-3 py-2 ${section === 'overview' ? 'ring-1 ring-cyan-300/50' : ''}`} href={`/app/projects/${projectId}`}>overview</Link>
