@@ -135,7 +135,7 @@ function generateRoadAndPlotGrid(boundary) {
   };
 }
 
-export default function LandCommandMap({ className = '', boundary = [], onBoundaryChange }) {
+export default function LandCommandMap({ className = '', boundary = [], scenario = null, onBoundaryChange }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef([]);
@@ -156,7 +156,21 @@ export default function LandCommandMap({ className = '', boundary = [], onBounda
   }, [boundary]);
 
   const boundaryGeoJson = useMemo(() => toGeoJson(localBoundary), [localBoundary]);
-  const overlays = useMemo(() => generateRoadAndPlotGrid(localBoundary), [localBoundary]);
+  const overlays = useMemo(() => {
+    if (scenario?.layout?.roadLines || scenario?.layout?.plotGrid) {
+      return {
+        roads: {
+          type: 'FeatureCollection',
+          features: (scenario.layout.roadLines || []).map((coordinates) => ({ type: 'Feature', properties: { kind: 'road' }, geometry: { type: 'LineString', coordinates } }))
+        },
+        plots: {
+          type: 'FeatureCollection',
+          features: (scenario.layout.plotGrid || []).map((coordinates, idx) => ({ type: 'Feature', properties: { id: `scenario-plot-${idx + 1}` }, geometry: { type: 'Polygon', coordinates: [coordinates] } }))
+        }
+      };
+    }
+    return generateRoadAndPlotGrid(localBoundary);
+  }, [localBoundary, scenario]);
 
   useEffect(() => {
     drawModeRef.current = drawMode;
