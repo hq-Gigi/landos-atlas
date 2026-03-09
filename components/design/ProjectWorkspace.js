@@ -2,7 +2,6 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useState } from 'react';
 
-const IntelligenceVisualSystem = dynamic(() => import('./IntelligenceVisualSystem'), { ssr: false });
 const LandCommandMap = dynamic(() => import('./LandCommandMap'), { ssr: false });
 
 const tabConfig = [
@@ -52,46 +51,6 @@ function boundaryToInput(boundary) {
 }
 
 
-function normalizeBoundaryPoint(point) {
-  if (Array.isArray(point)) return { lng: Number(point[0]), lat: Number(point[1]) };
-  return { lng: Number(point?.lng), lat: Number(point?.lat) };
-}
-
-function BoundaryPreview({ boundary }) {
-  if (!Array.isArray(boundary) || boundary.length < 3) {
-    return <p className="text-sm text-[#99b6d3]">No parcel boundary saved yet. Draw and save a boundary to enable geometry metrics and scenario generation.</p>;
-  }
-
-  const normalized = boundary.map(normalizeBoundaryPoint);
-  const xs = normalized.map((point) => point.lng);
-  const ys = normalized.map((point) => point.lat);
-  const minX = Math.min(...xs);
-  const maxX = Math.max(...xs);
-  const minY = Math.min(...ys);
-  const maxY = Math.max(...ys);
-  const spanX = maxX - minX || 1;
-  const spanY = maxY - minY || 1;
-  const points = normalized
-    .map((point) => `${((point.lng - minX) / spanX) * 280 + 20},${300 - (((point.lat - minY) / spanY) * 240 + 30)}`)
-    .join(' ');
-
-  return (
-    <svg viewBox="0 0 320 320" className="mt-3 w-full rounded-xl border border-cyan-200/20 bg-[#071827] p-3">
-      <defs>
-        <pattern id="grid" width="16" height="16" patternUnits="userSpaceOnUse">
-          <path d="M 16 0 L 0 0 0 16" fill="none" stroke="rgba(79,209,255,0.14)" strokeWidth="1" />
-        </pattern>
-      </defs>
-      <rect x="0" y="0" width="320" height="320" fill="url(#grid)" />
-      <polyline points={`${points} ${points.split(' ')[0]}`} fill="rgba(79,209,255,0.16)" stroke="#4FD1FF" strokeWidth="2.5" />
-      {normalized.map((point, idx) => {
-        const cx = ((point.lng - minX) / spanX) * 280 + 20;
-        const cy = 300 - (((point.lat - minY) / spanY) * 240 + 30);
-        return <circle key={`${point.lng}-${point.lat}-${idx}`} cx={cx} cy={cy} r="3.5" fill="#F4C542" />;
-      })}
-    </svg>
-  );
-}
 
 export default function ProjectWorkspace({ projectId, section }) {
   const [state, setState] = useState(null);
@@ -310,7 +269,7 @@ export default function ProjectWorkspace({ projectId, section }) {
             <span>search · draw · edit · overlay</span>
           </div>
           <LandCommandMap
-            className="h-[420px] w-full lg:h-[560px]"
+            className="h-[560px] w-full lg:h-[720px]"
             boundary={state?.boundary || []}
             scenario={selectedScenario}
             onBoundaryChange={(next) => {
@@ -328,7 +287,6 @@ export default function ProjectWorkspace({ projectId, section }) {
             <p className="mt-1 text-sm text-[#b5cde6]">Margin {topScenario?.metrics?.margin || '0%'} · Optimization {topScenario?.optimizationScore || 0}</p>
             <p className="mt-3 text-xs text-cyan-100/80">AI recommendation: {topScenario ? `Prioritize ${topScenario.name} for highest ranked feasibility envelope.` : 'Generate scenarios to receive recommendation.'}</p>
           </div>
-          <BoundaryPreview boundary={state?.boundary} />
         </aside>
       </div>
 
@@ -364,8 +322,7 @@ export default function ProjectWorkspace({ projectId, section }) {
               <li>• Perimeter and area are recomputed from persisted coordinates.</li>
               <li>• Frontage is derived from boundary edges for layout suitability.</li>
             </ul>
-            <BoundaryPreview boundary={state?.boundary} />
-          </div>
+            </div>
         </div>
       )}
 
@@ -483,8 +440,6 @@ export default function ProjectWorkspace({ projectId, section }) {
           </div>
         </div>
       )}
-
-      <IntelligenceVisualSystem />
     </section>
   );
 }
