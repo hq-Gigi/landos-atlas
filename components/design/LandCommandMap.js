@@ -130,28 +130,6 @@ function importBoundaryFromGeoJson(raw) {
   return polygon.slice(0, -1).map(([lng, lat]) => ({ lng: Number(lng), lat: Number(lat) })).filter((p) => Number.isFinite(p.lng) && Number.isFinite(p.lat));
 }
 
-function buildCandidateParcels(center, filters) {
-  if (!center) return { type: 'FeatureCollection', features: [] };
-  const kmStep = 0.009;
-  const features = Array.from({ length: 8 }).map((_, idx) => {
-    const x = idx % 4;
-    const y = Math.floor(idx / 4);
-    const lng = center.lng + ((x - 1.5) * kmStep * 1.8);
-    const lat = center.lat + ((y - 0.5) * kmStep * 1.6);
-    const sizeHa = Number(filters.sizeMin || 1) + idx;
-    return {
-      type: 'Feature',
-      properties: { id: `candidate-${idx + 1}`, sizeHa, potential: Number(filters.potential || 70) + ((idx % 3) * 5) },
-      geometry: {
-        type: 'Polygon',
-        coordinates: [[[lng, lat], [lng + kmStep, lat], [lng + kmStep, lat + kmStep], [lng, lat + kmStep], [lng, lat]]]
-      }
-    };
-  });
-
-  return { type: 'FeatureCollection', features };
-}
-
 function applyGroupVisibility(map, enabledGroups) {
   const layers = map.getStyle()?.layers || [];
   layers.forEach((layer) => {
@@ -175,9 +153,7 @@ export default function LandCommandMap({ className = '', boundary = [], scenario
   const [localBoundary, setLocalBoundary] = useState(normalizeBoundary(boundary));
   const [mapboxLoadError, setMapboxLoadError] = useState('');
   const [coordinateInput, setCoordinateInput] = useState('');
-  const [candidateFilters, setCandidateFilters] = useState({ sizeMin: 2, roadProximityKm: 1, cityProximityKm: 20, potential: 75 });
-  const [candidateGeoJson, setCandidateGeoJson] = useState({ type: 'FeatureCollection', features: [] });
-  const [layersEnabled, setLayersEnabled] = useState({ roads: true, buildings: true, water: true, boundaries: true, terrain: false, utilities: false, parcels: true, scenarios: true, candidates: true, projects: true });
+  const [layersEnabled, setLayersEnabled] = useState({ roads: true, buildings: true, water: true, boundaries: true, terrain: false, utilities: false, parcels: true, scenarios: true, projects: true });
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
   useEffect(() => {
@@ -234,10 +210,6 @@ export default function LandCommandMap({ className = '', boundary = [], scenario
         map.addLayer({ id: 'parcel-fill', type: 'fill', source: 'parcel-boundary', paint: { 'fill-color': '#00d4ff', 'fill-opacity': 0.15 } });
         map.addLayer({ id: 'parcel-outline', type: 'line', source: 'parcel-boundary', paint: { 'line-color': '#4ff0ff', 'line-width': 3 } });
 
-        map.addSource('candidate-parcels', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-        map.addLayer({ id: 'candidate-fill', type: 'fill', source: 'candidate-parcels', paint: { 'fill-color': '#98f5a9', 'fill-opacity': 0.22 } });
-        map.addLayer({ id: 'candidate-outline', type: 'line', source: 'candidate-parcels', paint: { 'line-color': '#71d885', 'line-width': 1.6 } });
-
         map.addSource('scenario-roads', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
         map.addLayer({ id: 'scenario-roads', type: 'line', source: 'scenario-roads', paint: { 'line-color': '#f8d26a', 'line-width': 2.4, 'line-opacity': 0.9 } });
 
@@ -272,7 +244,6 @@ export default function LandCommandMap({ className = '', boundary = [], scenario
     const map = mapRef.current;
     if (!map || !map.getSource('parcel-boundary')) return;
     map.getSource('parcel-boundary').setData(boundaryGeoJson || { type: 'FeatureCollection', features: [] });
-    map.getSource('candidate-parcels')?.setData(candidateGeoJson);
     map.getSource('scenario-roads')?.setData({ type: 'FeatureCollection', features: scenarioFeatures.filter((f) => f.properties.kind === 'road') });
     map.getSource('scenario-plots')?.setData({ type: 'FeatureCollection', features: scenarioFeatures.filter((f) => f.properties.kind === 'plot') });
 
@@ -304,7 +275,7 @@ export default function LandCommandMap({ className = '', boundary = [], scenario
 
     const bbox = getBBox(localBoundary);
     if (bbox) map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: 60, duration: 700 });
-  }, [boundaryGeoJson, candidateGeoJson, localBoundary, onBoundaryChange, projects, scenarioFeatures, showProjectMarkers]);
+  }, [boundaryGeoJson, localBoundary, onBoundaryChange, projects, scenarioFeatures, showProjectMarkers]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -312,7 +283,6 @@ export default function LandCommandMap({ className = '', boundary = [], scenario
     applyGroupVisibility(map, layersEnabled);
     if (mapboxToken && map.getTerrain()) map.setTerrain({ source: 'mapbox-dem', exaggeration: layersEnabled.terrain ? 1.2 : 1.0 });
     ['parcel-fill', 'parcel-outline'].forEach((id) => map.getLayer(id) && map.setLayoutProperty(id, 'visibility', layersEnabled.parcels ? 'visible' : 'none'));
-    ['candidate-fill', 'candidate-outline'].forEach((id) => map.getLayer(id) && map.setLayoutProperty(id, 'visibility', layersEnabled.candidates ? 'visible' : 'none'));
     ['scenario-roads', 'scenario-plots-fill', 'scenario-plots'].forEach((id) => map.getLayer(id) && map.setLayoutProperty(id, 'visibility', layersEnabled.scenarios ? 'visible' : 'none'));
   }, [layersEnabled, mapboxToken]);
 
@@ -359,14 +329,6 @@ export default function LandCommandMap({ className = '', boundary = [], scenario
     }
   };
 
-  const discoverCandidateParcels = () => {
-    const center = localBoundary[0] || (() => {
-      const c = mapRef.current?.getCenter();
-      return c ? { lng: c.lng, lat: c.lat } : null;
-    })();
-    setCandidateGeoJson(buildCandidateParcels(center, candidateFilters));
-  };
-
   return (
     <div className={className}>
       <div className="flex flex-wrap items-center gap-2 border-b border-white/15 bg-[#030f18]/90 px-3 py-2">
@@ -384,18 +346,13 @@ export default function LandCommandMap({ className = '', boundary = [], scenario
           </label>
         ))}
       </div>
-      <div className="grid gap-2 border-b border-white/10 bg-[#04111b]/80 px-3 py-2 md:grid-cols-3">
+      <div className="grid gap-2 border-b border-white/10 bg-[#04111b]/80 px-3 py-2 md:grid-cols-2">
         <textarea className="min-h-[90px] rounded border border-white/10 bg-[#061320] p-2 text-xs" placeholder="Import coordinates (lng,lat per line)" value={coordinateInput} onChange={(e) => setCoordinateInput(e.target.value)} />
         <div className="space-y-2 text-xs">
           <button className="btn-secondary w-full" type="button" onClick={importCoordinates}>Import coordinates</button>
           <label className="block rounded border border-white/20 px-2 py-2 text-center text-cyan-100">Import shapefile export (GeoJSON)
             <input type="file" accept=".json,.geojson" className="hidden" onChange={importShapeFile} />
           </label>
-        </div>
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <input className="rounded border border-white/20 bg-[#071523] px-2 py-1" value={candidateFilters.sizeMin} onChange={(e) => setCandidateFilters((f) => ({ ...f, sizeMin: Number(e.target.value) }))} placeholder="Min size ha" />
-          <input className="rounded border border-white/20 bg-[#071523] px-2 py-1" value={candidateFilters.potential} onChange={(e) => setCandidateFilters((f) => ({ ...f, potential: Number(e.target.value) }))} placeholder="Potential" />
-          <button className="btn-primary col-span-2" type="button" onClick={discoverCandidateParcels}>Discover parcels</button>
         </div>
       </div>
       {mapboxLoadError ? <div className="px-3 py-2 text-xs text-amber-300">{mapboxLoadError}</div> : null}
